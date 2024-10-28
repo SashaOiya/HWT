@@ -6,11 +6,6 @@
 
 namespace Trees {
 
-enum errors {
-    no_errors = 1,
-    input_error = 2
-};
-
 template <typename KeyT, typename Comp>
 class SearchTree {
     const char *dump_file_name = "tree.dot";
