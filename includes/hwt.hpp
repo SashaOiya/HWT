@@ -1,18 +1,10 @@
 #pragma once 
 
 #include <iostream>
-#include <iterator>
-#include <fstream>
-#include <string>
-#include <cstdlib>
-#include <cstdio>
-#include <iterator>
-#include <memory>
 #include "hwt_log.hpp"
+#include "node_iterator.hpp"
 
 namespace Trees {
-
-const int DUMP_COUNTER = 100;
 
 enum errors {
     no_errors = 1,
@@ -21,226 +13,142 @@ enum errors {
 
 template <typename KeyT, typename Comp>
 class SearchTree {
-    struct Node_s {
-        KeyT key_;
-        Node_s *parent_ = nullptr, *left_ = nullptr, *right_ = nullptr;
-        int height_ = 0;
-        Node_s(const KeyT& val, Node_s* parent = nullptr) : key_(val), parent_(parent) {}
-        ~Node_s() { delete left_; delete right_; } // aaaaaaaaaaaa
-    };
     const char *dump_file_name = "tree.dot";
-    // deque вызовов, deque элементов
-
-class AVLTreeIterator {
-public:
-    using iterator_category = std::bidirectional_iterator_tag;
-    using value_type = KeyT;
-    using difference_type = std::ptrdiff_t;
-    using pointer = KeyT*;
-    using reference = KeyT&;
-
-    // Конструктор итератора
-    explicit AVLTreeIterator(Node_s* node = nullptr) : current(node) {}
-
-    // Оператор разыменования
-    KeyT& operator*() const {
-        return current->key_;
-    }
-
-    // Оператор префиксного инкремента
-    AVLTreeIterator& operator++() {
-        advanceForward();
-        return *this;
-    }
-
-    // Оператор постфиксного инкремента
-    AVLTreeIterator operator++(int) {
-        auto temp = *this;
-        advanceForward();
-        return temp;
-    }
-
-    // Оператор префиксного декремента
-    AVLTreeIterator& operator--() {
-        advanceBackward();
-        return *this;
-    }
-
-    // Оператор постфиксного декремента
-    AVLTreeIterator operator--(int) {
-        auto temp = *this;
-        advanceBackward();
-        return temp;
-    }
-
-    // Операторы сравнения на равенство/неравенство
-    bool operator==(const AVLTreeIterator& other) const {
-        return current == other.current;
-    }
-
-    bool operator!=(const AVLTreeIterator& other) const {
-        return current != other.current;
-    }
-
-private:
-    Node_s* current;
-
-    // Метод для перехода к следующему узлу в порядке in-order
-    void advanceForward() {
-        if (current->right_) {
-            current = current->right_;
-            while (current->left_) {
-                current = current->left_;
-            }
-        } else {
-            Node_s* parent = current->parent_;
-            while (parent && current == parent->right_) {
-                current = parent;
-                parent = parent->parent_;
-            }
-            current = parent;
-        }
-    }
-
-    // Метод для перехода к предыдущему узлу в порядке in-order
-    void advanceBackward() {
-        if (current->left_) {
-            current = current->left_;
-            while (current->right_) {
-                current = current->right_;
-            }
-        } else {
-            Node_s* parent = current->parent_;
-            while (parent && current == parent->left_) {
-                current = parent;
-                parent = parent->parent_;
-            }
-            current = parent;
-        }
-    }
-
-    std::unique_ptr<Node_s> top_;
-};
-
-public: // селекторы
-    //iterator lower_bound(KeyT key) const;
-    //iterator upper_bound(KeyT key) const;
-    //int distance(iterator fst, iterator snd) const;
+    using iterator = hwt::iterator<KeyT>;
+    using Node_s   = hwt::Node_s<KeyT>;
     Node_s *top_ = nullptr;
-    using iterator = AVLTreeIterator;
 
+public: 
     SearchTree() : top_(nullptr) {}
 
-    iterator begin() {
-        return iterator(findMin(top_));
+    // JOPA: begin() shall work in O(1) time, but your begin() works in O(h), h - height of the tree
+    iterator begin () 
+    {
+        return iterator ( find_min_key ( top_ ) );
     }
 
-    iterator end() {
+    iterator end () const 
+    {
         return iterator(nullptr);
     }
 
-    void insert(const KeyT& value) {
+    bool empty () const 
+    {
+        return ( top_ ) ? false : true;
+    }
+
+    void insert ( const KeyT& value ) 
+    {
         top_ = insert( top_, value, nullptr);
     }
 
-    errors read_data () // to ctor
-    {        
-        char type = 0;
-        do {
-            std::cin >> type;
-            //errors
-            if ( type == 'k' ) {
-                KeyT key = 0;
-                std::cin >> key;
-                insert ( key );
-            }
-            else if ( type == 'q' ) {
-                KeyT key1 = 0;
-                KeyT key2 = 0;
+    iterator lower_bound(const KeyT& value) const
+    {
+        Node_s* node = top_;
+        Node_s* result = nullptr;
 
-                std::cin >> key1 >> key2;
-                //range_query();
+        while (node) {
+            if (node->key_ >= value) {
+                result = node; 
+                node = node->left_;
+            } else {
+                node = node->right_;
             }
-            else if ( type ) { return input_error; } // throw
-        } while ( type );
+        }
 
-        return no_errors;
+        return iterator { result };
+    }
+    
+    iterator upper_bound ( const KeyT& value ) const
+    {
+        Node_s* node = top_;
+        Node_s* result = nullptr;
+        while (node) {
+            if (node->key_ > value) {
+                result = node;  
+                node = node->left_;
+            } else {
+                node = node->right_;
+            }
+        }
+
+        return iterator { result };
     }
 
-    //void insert(KeyT key);
-public: // модификаторы
-    /*int range_query ( T fst, T snd ) {
-        using itt = typename C::iterator;
-        itt start = s.lower_bound(fst); // first not less then fst
-        itt fin = s.upper_bound(snd); // first greater then snd
-        return mydistance(s, start, fin); // std::distance для set
-    }*/
-private:
+    size_t range_query ( const KeyT& fst, const KeyT& snd ) const
+    {
+        auto start = lower_bound ( fst ); 
+        auto fin = upper_bound ( snd ); 
 
-    auto findMin(Node_s* node) const {
-        while (node && node->left_) {
+        return  std::distance ( start, fin );
+    }
+
+private:
+    auto find_min_key ( Node_s* node ) const 
+    {
+        while ( node && node->left_ ) {
             node = node->left_;
         }
         return node;
     }
 
-    Node_s *balance ( Node_s *p ) // балансировка узла p
+    Node_s *balance ( Node_s *p ) 
     {
-        fixheight ( p );
+        fix_height ( p );
 
-        if ( bfactor ( p ) == 2 )
+        if ( b_factor ( p ) == 2 )
         {
-            if ( bfactor ( p->right_ ) < 0 ) {
-                p->right_ = rotateright ( p->right_ );
+            if ( b_factor ( p->right_ ) < 0 ) {
+                p->right_ = rotate_right ( p->right_ );
             }
-            return rotateleft ( p );
+            return rotate_left ( p );
         }
-        if ( bfactor ( p ) == -2 )
+        if ( b_factor ( p ) == -2 )
         {
-            if ( bfactor ( p->left_ ) > 0  ) {
-                p->left_ = rotateleft ( p->left_ );
+            if ( b_factor ( p->left_ ) > 0  ) {
+                p->left_ = rotate_left ( p->left_ );
             }
-            return rotateright ( p );
+            return rotate_right ( p );
         }
 
-        return p; // балансировка не нужна
+        return p; 
     }
 
-    Node_s *insert ( Node_s *node, KeyT key, Node_s* parent) // вставка ключа k в дерево с корнем p
+    Node_s *insert ( Node_s *node, const KeyT key, Node_s* parent)
     {
         if ( !node ) { return new Node_s( key, parent ); };
 
         if ( key < node->key_ ) {
             node->left_  = insert ( node->left_, key, node );
-            fixheight ( node->left_ );
+            fix_height ( node->left_ );
         }
         else if ( key > node->key_ ) {
             node->right_ = insert ( node->right_, key, node );
-            fixheight ( node->right_ );
+            fix_height ( node->right_ );
         }
 
         return balance ( node );
     }
 
-    void fixheight ( Node_s *p ) // name
+    void fix_height ( Node_s *p )
     {
-        int hl = height ( p->left_ ); // unsigned char
+        int hl = height ( p->left_ ); 
         int hr = height ( p->right_ );
 
         p->height_ = ( hl > hr ? hl : hr ) + 1;
     }
 
-    int height ( Node_s *p )
+    int height ( const Node_s *p ) const
     {
         return p ? p->height_ : 0;
     }
 
-    int bfactor ( Node_s *p )
+    int b_factor ( const Node_s *p ) const
     {
         return height ( p->right_ ) - height ( p->left_ );
     }
 
-    Node_s *rotateleft ( Node_s *q ) // левый поворот вокруг q
+    Node_s *rotate_left ( Node_s *q ) 
     {
         Node_s *p = q->right_; // copy
         q->right_ = p->left_;
@@ -249,13 +157,13 @@ private:
         p->parent_ = q->parent_;
         q->parent_ = p;
 
-        fixheight ( q );
-        fixheight ( p );
+        fix_height ( q );
+        fix_height ( p );
 
         return p;
     }
 
-    Node_s *rotateright ( Node_s *node ) // правый поворот вокруг p
+    Node_s *rotate_right ( Node_s *node ) 
     {
         Node_s *new_node = node->left_;
         node->left_ = new_node->right_;
@@ -264,13 +172,15 @@ private:
         new_node->parent_ = node->parent_;
         node->parent_ = new_node;
 
-        fixheight ( node );
-        fixheight ( new_node );
+        fix_height ( node );
+        fix_height ( new_node );
 
         return new_node;
     }
-public:
-    void Tree_Dump_Body ( const Node_s *node, FILE *tree_dump_f ) 
+
+    const int DUMP_COUNTER = 100;
+
+    void graph_dump_body ( const Node_s *node, FILE *tree_dump_f )  // fprintf
     {
         if ( !node ) { return ; }
 
@@ -283,10 +193,12 @@ public:
             fprintf ( tree_dump_f, "\n \"%p\" -> \"%p\" \n", node, node->right_ );
         }
 
-        Tree_Dump_Body ( node->left_,  tree_dump_f );
-        Tree_Dump_Body ( node->right_, tree_dump_f );
+        graph_dump_body ( node->left_,  tree_dump_f );
+        graph_dump_body ( node->right_, tree_dump_f );
     }
-    void Tree_Graph_Dump () 
+
+public:
+    void graph_dump () 
     {
         FILE *tree_dump = fopen ( dump_file_name, "w" );
         if ( !tree_dump ) {
@@ -297,7 +209,7 @@ public:
                              "node [shape = record];\n"
                              " \"%p\" ", top_ );
 
-        Tree_Dump_Body ( top_, tree_dump );
+        graph_dump_body ( top_, tree_dump );
 
         fprintf ( tree_dump, "}\n" );
         fclose ( tree_dump );
@@ -309,7 +221,7 @@ public:
         std::system  ( command_buffer );
     }
 
-    void Tree_Text_Dump ( const Node_s *tree_node ) 
+    void text_dump ( const Node_s *tree_node ) 
     {
         if ( tree_node == nullptr) {
             printf ( " nil " );
@@ -325,6 +237,6 @@ public:
         printf ( " ) " );
 
     }
-
 };
+
 }
