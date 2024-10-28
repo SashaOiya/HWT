@@ -17,14 +17,14 @@ class SearchTree {
     using iterator = hwt::iterator<KeyT>;
     using Node_s   = hwt::Node_s<KeyT>;
     Node_s *top_ = nullptr;
+    Node_s *min_key_node_ = nullptr;
 
 public: 
     SearchTree() : top_(nullptr) {}
 
-    // JOPA: begin() shall work in O(1) time, but your begin() works in O(h), h - height of the tree
     iterator begin () 
     {
-        return iterator ( find_min_key ( top_ ) );
+        return iterator ( min_key_node_ );
     }
 
     iterator end () const 
@@ -116,7 +116,12 @@ private:
 
     Node_s *insert ( Node_s *node, const KeyT key, Node_s* parent)
     {
-        if ( !node ) { return new Node_s( key, parent ); };
+        if ( !node ) { 
+            auto new_node = new Node_s( key, parent ); 
+            min_key_node_ = ( !min_key_node_ ) ? new_node : min_key_node_;  
+            min_key_node_ = ( min_key_node_->key_ > key ) ? new_node : min_key_node_;
+            return new_node;
+        }
 
         if ( key < node->key_ ) {
             node->left_  = insert ( node->left_, key, node );
