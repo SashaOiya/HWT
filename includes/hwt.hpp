@@ -30,10 +30,11 @@ public:
         }
     }
 
-    SearchTree& operator=(const SearchTree &tree ){
-        if ( this != &tree ) {
-            SearchTree(tree);
-        }
+    SearchTree& operator=(const SearchTree &tree )
+    {
+        SearchTree copy {tree};
+        swap ( tree );
+
         return *this;
     }
 
@@ -62,6 +63,12 @@ public:
     void insert ( const KeyT& value ) 
     {
         top_ = insert ( top_, value, nullptr );
+    }
+    
+    void swap ( SearchTree& tree ) noexcept
+    {
+        std::swap ( this->top_, tree.top_ );
+        std::swap ( this->nodes_, tree.nodes_ );
     }
 
     iterator lower_bound ( const KeyT& value ) const
