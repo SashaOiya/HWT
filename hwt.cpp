@@ -47,13 +47,8 @@ int main ()
     }
     std::cout << std::endl;
 
-    /*std::set<int> tree = {}; 
-    tree.insert(9);
-    tree.insert(4);
-    tree.insert(7);
-    tree.insert(8);*/
-
-    //tree.graph_dump( );
+    Trees::SearchTree<KeyT, KeyT> copy = tree;
+    copy.graph_dump();
 
     return 0;
 }

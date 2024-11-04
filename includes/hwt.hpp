@@ -1,6 +1,7 @@
 #pragma once 
 
 #include <iostream>
+#include <vector>
 #include "hwt_log.hpp"
 #include "node_iterator.hpp"
 
@@ -12,12 +13,38 @@ class SearchTree {
     using iterator = hwt::iterator<KeyT>;
     using Node_s   = hwt::Node_s<KeyT>;
     Node_s *top_ = nullptr;
+
     Node_s *min_key_node_ = nullptr;
 
 public: 
+    std::vector <Node_s *> nodes_ {};
+
     SearchTree() : top_(nullptr) {}
 
-    iterator begin () 
+    SearchTree(const SearchTree &tree) : top_(nullptr) 
+    {
+        nodes_.reserve ( tree.size() );
+
+        for ( auto &i : tree.nodes_ ){
+            insert ( i->key_ );
+        }
+    }
+
+    SearchTree& operator=(const SearchTree &tree ){
+        if ( this != &tree ) {
+            SearchTree(tree);
+        }
+        return *this;
+    }
+
+    ~SearchTree() = default;
+
+    const size_t size() const
+    {
+        return nodes_.size();
+    }
+
+    iterator begin () const
     {
         return iterator ( min_key_node_ );
     }
@@ -29,21 +56,21 @@ public:
 
     bool empty () const 
     {
-        return ( top_ ) ? false : true;
+        return !top_;
     }
 
     void insert ( const KeyT& value ) 
     {
-        top_ = insert( top_, value, nullptr);
+        top_ = insert ( top_, value, nullptr );
     }
 
-    iterator lower_bound(const KeyT& value) const
+    iterator lower_bound ( const KeyT& value ) const
     {
         Node_s* node = top_;
         Node_s* result = nullptr;
 
-        while (node) {
-            if (node->key_ >= value) {
+        while ( node ) {
+            if ( node->key_ >= value ) {
                 result = node; 
                 node = node->left_;
             } else {
@@ -58,8 +85,8 @@ public:
     {
         Node_s* node = top_;
         Node_s* result = nullptr;
-        while (node) {
-            if (node->key_ > value) {
+        while ( node ) {
+            if ( node->key_ > value ) {
                 result = node;  
                 node = node->left_;
             } else {
@@ -79,26 +106,19 @@ public:
     }
 
 private:
-    auto find_min_key ( Node_s* node ) const 
-    {
-        while ( node && node->left_ ) {
-            node = node->left_;
-        }
-        return node;
-    }
-
     Node_s *balance ( Node_s *p ) 
     {
         fix_height ( p );
 
-        if ( b_factor ( p ) == 2 )
+        const int b_factor_value = b_factor ( p );
+        if ( b_factor_value == 2 )
         {
             if ( b_factor ( p->right_ ) < 0 ) {
                 p->right_ = rotate_right ( p->right_ );
             }
             return rotate_left ( p );
         }
-        if ( b_factor ( p ) == -2 )
+        if ( b_factor_value == -2 )
         {
             if ( b_factor ( p->left_ ) > 0  ) {
                 p->left_ = rotate_left ( p->left_ );
@@ -109,33 +129,33 @@ private:
         return p; 
     }
 
-    Node_s *insert ( Node_s *node, const KeyT key, Node_s* parent)
+    auto insert ( Node_s *node, const KeyT key, Node_s* parent)
     {
         if ( !node ) { 
             auto new_node = new Node_s( key, parent ); 
-            min_key_node_ = ( !min_key_node_ ) ? new_node : min_key_node_;  
-            min_key_node_ = ( min_key_node_->key_ > key ) ? new_node : min_key_node_;
+            nodes_.push_back ( new_node ); 
+            min_key_node_ = ( min_key_node_  && min_key_node_->key_ < key ) ? min_key_node_ : new_node;  
             return new_node;
         }
 
         if ( key < node->key_ ) {
-            node->left_  = insert ( node->left_, key, node );
+            node->left_ = insert ( node->left_, key, node );
             fix_height ( node->left_ );
         }
-        else if ( key > node->key_ ) {
+        else if ( node->key_ < key ) {
             node->right_ = insert ( node->right_, key, node );
             fix_height ( node->right_ );
         }
 
         return balance ( node );
     }
-
+    
     void fix_height ( Node_s *p )
     {
         int hl = height ( p->left_ ); 
         int hr = height ( p->right_ );
 
-        p->height_ = ( hl > hr ? hl : hr ) + 1;
+        p->height_ = std::max ( hl, hr ) + 1;
     }
 
     int height ( const Node_s *p ) const
@@ -147,6 +167,8 @@ private:
     {
         return height ( p->right_ ) - height ( p->left_ );
     }
+
+    
 
     Node_s *rotate_left ( Node_s *q ) 
     {
@@ -178,7 +200,7 @@ private:
         return new_node;
     }
 
-    const int DUMP_COUNTER = 100;
+    static const int kDumpCounter = 100;
 
     void graph_dump_body ( const Node_s *node, FILE *tree_dump_f )  // fprintf
     {
@@ -215,7 +237,7 @@ public:
         fclose ( tree_dump );
 
         static int file_counter = 0;
-        char command_buffer[DUMP_COUNTER] = {};
+        char command_buffer[kDumpCounter] = {};
         fprintf ( log(), "<img src=\"tree%d.png\" alt=\"-\" width=\"500\" height=\"600\">\n", file_counter );
         sprintf ( command_buffer, "dot -T png tree.dot -o logs/tree%d.png", file_counter++ );
         std::system  ( command_buffer );
