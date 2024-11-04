@@ -20,3 +20,8 @@ TEST(test3, test3)
 {
 	test_funcs::run_test("/test3.txt");
 }
+
+TEST(test4, test4)
+{
+	test_funcs::run_test("/test4.txt");
+}

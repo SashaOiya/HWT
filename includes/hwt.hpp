@@ -1,6 +1,7 @@
-#pragma once 
+#pragma once
 
 #include <iostream>
+#include <utility>
 #include <vector>
 #include "hwt_log.hpp"
 #include "node_iterator.hpp"
@@ -8,21 +9,21 @@
 namespace Trees {
 
 template <typename KeyT, typename Comp>
-class SearchTree {
-    const char *dump_file_name = "tree.dot";
+class SearchTree { // final
     using iterator = hwt::iterator<KeyT>;
     using Node_s   = hwt::Node_s<KeyT>;
     Node_s *top_ = nullptr;
 
     Node_s *min_key_node_ = nullptr;
-
-public: 
     std::vector <Node_s *> nodes_ {};
+public:
 
-    SearchTree() : top_(nullptr) {}
+    SearchTree () : top_(nullptr) {}
 
-    SearchTree(const SearchTree &tree) : top_(nullptr) 
-    {
+    // auto lhs = rhs;
+    // auto lhs{rhs};
+    // auto lhs(rhs);
+    SearchTree ( const SearchTree &tree ) : top_(nullptr) { // copy ctor
         nodes_.reserve ( tree.size() );
 
         for ( auto &i : tree.nodes_ ){
@@ -30,17 +31,37 @@ public:
         }
     }
 
-    SearchTree& operator=(const SearchTree &tree )
-    {
+    // auto lhs = ....;
+    // ....
+    // lhs = rhs;
+    SearchTree& operator= ( const SearchTree &tree ) { // copy =
         SearchTree copy {tree};
         swap ( tree );
 
         return *this;
     }
 
-    ~SearchTree() = default;
+    // auto lhs = std::move(rhs);
+    // auto lhs{std::move(rhs)};
+    // auto lhs(std::move(rhs));
+    SearchTree ( SearchTree &&rhs ) : nodes_( std::move ( rhs.nodes_ ) ), min_key_node_( std::move ( rhs.min_key_node_ ) ),
+                                      top_( std::move ( rhs.top_ ) ) {} // move ctor
 
-    const size_t size() const
+    // auto lhs = ....;
+    // ....
+    // lhs = std::move(rhs);
+    SearchTree operator= ( SearchTree &&rhs ) // move =
+    {
+        swap ( rhs );
+        return *this;
+    }
+
+    ~SearchTree()
+    {
+        std::destroy ( nodes_.begin(), nodes_.end() );
+    }
+
+    size_t size() const
     {
         return nodes_.size();
     }
@@ -50,25 +71,23 @@ public:
         return iterator ( min_key_node_ );
     }
 
-    iterator end () const 
+    iterator end () const
     {
         return iterator(nullptr);
     }
 
-    bool empty () const 
-    {
-        return !top_;
-    }
+    bool empty () const  { return !top_; }
 
-    void insert ( const KeyT& value ) 
+    void insert ( const KeyT& value )
     {
         top_ = insert ( top_, value, nullptr );
     }
-    
+
     void swap ( SearchTree& tree ) noexcept
     {
-        std::swap ( this->top_, tree.top_ );
-        std::swap ( this->nodes_, tree.nodes_ );
+        std::swap ( top_, tree.top_ );
+        std::swap ( nodes_, tree.nodes_ );
+        std::swap ( min_key_node_, tree.min_key_node_ );
     }
 
     iterator lower_bound ( const KeyT& value ) const
@@ -78,8 +97,7 @@ public:
 
         while ( node ) {
             if ( node->key_ >= value ) {
-                result = node; 
-                node = node->left_;
+                result = std::exchange(node, node->left_ );
             } else {
                 node = node->right_;
             }
@@ -87,15 +105,14 @@ public:
 
         return iterator { result };
     }
-    
+
     iterator upper_bound ( const KeyT& value ) const
     {
         Node_s* node = top_;
         Node_s* result = nullptr;
         while ( node ) {
             if ( node->key_ > value ) {
-                result = node;  
-                node = node->left_;
+                result = std::exchange(node, node->left_ );
             } else {
                 node = node->right_;
             }
@@ -103,17 +120,8 @@ public:
 
         return iterator { result };
     }
-
-    size_t range_query ( const KeyT& fst, const KeyT& snd ) const
-    {
-        auto start = lower_bound ( fst ); 
-        auto fin = upper_bound ( snd ); 
-
-        return  std::distance ( start, fin );
-    }
-
 private:
-    Node_s *balance ( Node_s *p ) 
+    Node_s *balance ( Node_s *p )
     {
         fix_height ( p );
 
@@ -133,15 +141,18 @@ private:
             return rotate_right ( p );
         }
 
-        return p; 
+        return p;
     }
 
-    auto insert ( Node_s *node, const KeyT key, Node_s* parent)
+    auto insert ( Node_s *node, const KeyT &key, Node_s* parent)
     {
-        if ( !node ) { 
-            auto new_node = new Node_s( key, parent ); 
-            nodes_.push_back ( new_node ); 
-            min_key_node_ = ( min_key_node_  && min_key_node_->key_ < key ) ? min_key_node_ : new_node;  
+        if ( !node ) {
+            auto new_node = new Node_s( key, parent );
+            nodes_.push_back ( new_node );
+            if (!min_key_node_ || key < min_key_node_->key_) {
+                min_key_node_ = new_node;
+            }
+
             return new_node;
         }
 
@@ -156,13 +167,13 @@ private:
 
         return balance ( node );
     }
-    
+
     void fix_height ( Node_s *p )
     {
-        int hl = height ( p->left_ ); 
+        int hl = height ( p->left_ );
         int hr = height ( p->right_ );
 
-        p->height_ = std::max ( hl, hr ) + 1;
+        p->height_ = 1 + std::max ( hl, hr );
     }
 
     int height ( const Node_s *p ) const
@@ -175,9 +186,8 @@ private:
         return height ( p->right_ ) - height ( p->left_ );
     }
 
-    
 
-    Node_s *rotate_left ( Node_s *q ) 
+    Node_s *rotate_left ( Node_s *q )
     {
         Node_s *p = q->right_; // copy
         q->right_ = p->left_;
@@ -192,7 +202,7 @@ private:
         return p;
     }
 
-    Node_s *rotate_right ( Node_s *node ) 
+    Node_s *rotate_right ( Node_s *node )
     {
         Node_s *new_node = node->left_;
         node->left_ = new_node->right_;
@@ -208,6 +218,7 @@ private:
     }
 
     static const int kDumpCounter = 100;
+    const char *dump_file_name = "../tree.dot"; // c4inge
 
     void graph_dump_body ( const Node_s *node, FILE *tree_dump_f )  // fprintf
     {
@@ -227,7 +238,7 @@ private:
     }
 
 public:
-    void graph_dump () 
+    void graph_dump ()
     {
         FILE *tree_dump = fopen ( dump_file_name, "w" );
         if ( !tree_dump ) {
@@ -250,7 +261,7 @@ public:
         std::system  ( command_buffer );
     }
 
-    void text_dump ( const Node_s *tree_node ) 
+    void text_dump ( const Node_s *tree_node )
     {
         if ( tree_node == nullptr) {
             printf ( " nil " );

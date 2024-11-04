@@ -12,6 +12,17 @@
 
 namespace test_funcs
 {
+
+    using KeyT = int;
+
+    auto range_query ( const Trees::SearchTree<KeyT, KeyT> &tree, const KeyT& fst, const KeyT& snd )
+    {
+        auto start = tree.lower_bound ( fst );
+        auto fin = tree.upper_bound ( snd );
+
+        return std::distance ( start, fin );
+    }
+
     const int error_id = -1;
 
 	void get_result ( const std::string& filename, std::vector<int>& res )
@@ -22,9 +33,8 @@ namespace test_funcs
             exit(1);
         }
 
-        using KeyT = int;
         Trees::SearchTree<KeyT, KeyT> tree = {};
-    
+
         char type = 0;
         while ( file >> type ) {
             if ( type == 'k' ) {
@@ -49,7 +59,7 @@ namespace test_funcs
                     continue;
                 }
 
-                res.push_back ( tree.range_query ( key1, key2 ) );
+                res.push_back ( range_query ( tree, key1, key2 ) );
             } 
             else if ( type ) { throw "Error: invalit type\n"; }
         }
