@@ -60,7 +60,7 @@ namespace test_funcs
                 }
 
                 res.push_back ( range_query ( tree, key1, key2 ) );
-            } 
+            }
             else if ( type ) { throw "Error: invalit type\n"; }
         }
     }

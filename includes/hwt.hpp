@@ -3,8 +3,9 @@
 #include <iostream>
 #include <utility>
 #include <vector>
-#include "hwt_log.hpp"
 #include "node_iterator.hpp"
+#include <stack>
+#include <fstream>
 
 namespace Trees {
 
@@ -217,49 +218,45 @@ private:
         return new_node;
     }
 
-    static const int kDumpCounter = 100;
-    const char *dump_file_name = "../tree.dot"; // c4inge
-
-    void graph_dump_body ( const Node_s *node, FILE *tree_dump_f )  // fprintf
+    void graph_dump_nodes ( std::ofstream& file, Node_s *root) const
     {
-        if ( !node ) { return ; }
+        if (!root) return;
 
-        fprintf ( tree_dump_f , " \"%p\" [shape = Mrecord, style = filled, fillcolor = lightpink "
-                                " label = \"data: %d \"];\n", node, node->key_ );
-        if ( node->left_ ) {
-            fprintf ( tree_dump_f, "\"%p\" -> \"%p\" ", node, node->left_ );
-        }
-        if ( node->right_ ) {
-            fprintf ( tree_dump_f, "\n \"%p\" -> \"%p\" \n", node, node->right_ );
-        }
+        std::stack<Node_s *> stack = {};
+        stack.push(root);
 
-        graph_dump_body ( node->left_,  tree_dump_f );
-        graph_dump_body ( node->right_, tree_dump_f );
+        bool is_root = true;
+        while (!stack.empty())
+        {
+            auto node = stack.top();
+
+            file << "\"" << node << "\"" << "[shape = Mrecord, style = filled, fillcolor = lightpink "
+                                    "label = \"" << node->key_ << "\"]" << std::endl;
+
+            if (!is_root) file << "\"" << node->parent_ << "\"" << " -> " << "\"" << node << "\"" << std::endl;
+            else          is_root = false;
+
+            stack.pop();
+
+            if ( node->right_ ) { stack.push(node->right_); }
+            if ( node->left_  ) { stack.push(node->left_); }
+        }
     }
 
 public:
-    void graph_dump ()
-    {
-        FILE *tree_dump = fopen ( dump_file_name, "w" );
-        if ( !tree_dump ) {
-            perror ( "File opening failed" );
-            return ;
+    void graph_dump ( std::string filename ) const
+        {
+            std::ofstream file ( filename );
+            file << "digraph G {" << std::endl << "node [shape = record];" << std::endl;
+
+            if ( top_ ) graph_dump_nodes (file, top_ );
+
+            file << "}";
+            file.close();
+
+            std::string command = "dot -T png " + filename + " -o ../logs/tree.png";
+            std::system ( command.c_str() );
         }
-        fprintf ( tree_dump, "digraph G { \n"
-                             "node [shape = record];\n"
-                             " \"%p\" ", top_ );
-
-        graph_dump_body ( top_, tree_dump );
-
-        fprintf ( tree_dump, "}\n" );
-        fclose ( tree_dump );
-
-        static int file_counter = 0;
-        char command_buffer[kDumpCounter] = {};
-        fprintf ( log(), "<img src=\"tree%d.png\" alt=\"-\" width=\"500\" height=\"600\">\n", file_counter );
-        sprintf ( command_buffer, "dot -T png tree.dot -o logs/tree%d.png", file_counter++ );
-        std::system  ( command_buffer );
-    }
 
     void text_dump ( const Node_s *tree_node )
     {

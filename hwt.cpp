@@ -55,8 +55,9 @@ int main ()
     }
     std::cout << std::endl;
 
-    //Trees::SearchTree<KeyT, KeyT> copy = tree;
-    //tree.graph_dump();
+    #ifdef DUMP
+       tree.graph_dump("../tree.dot");
+    #endif
 
     return 0;
 }
