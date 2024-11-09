@@ -4,7 +4,6 @@
 #include <string>
 #include <fstream>
 #include <vector>
-#include <set>
 
 #include <gtest/gtest.h>
 
@@ -12,116 +11,119 @@
 
 namespace test_funcs
 {
-
-    using KeyT = int;
-
-    auto range_query ( const Trees::SearchTree<KeyT, KeyT> &tree, const KeyT& fst, const KeyT& snd )
-    {
-        auto start = tree.lower_bound ( fst );
-        auto fin = tree.upper_bound ( snd );
-
-        return std::distance ( start, fin );
-    }
-
-    const int error_id = -1;
-
-	void get_result ( const std::string& filename, std::vector<int>& res )
-    {
-        std::ifstream file ( filename );
-        if (!file) {
-            std::cout << "error\n";
-            exit(1);
-        }
-
-        Trees::SearchTree<KeyT, KeyT> tree = {};
-
-        char type = 0;
-        while ( file >> type ) {
-            if ( type == 'k' ) {
-                KeyT key = 0;
-                file >> key;
-                if ( !file.good() ) { throw "Error : invalid type of key\n"; } 
-
-                tree.insert ( key );
-            }
-            else if ( type == 'q' ) {
-                KeyT key1 = 0;
-                KeyT key2 = 0;
-
-                file >> key1;
-                if ( !std::cin.good() ) { throw "Error : invalid type of key1\n"; } 
-
-                file >> key2;
-                if ( !std::cin.good() ) { throw "Error : invalid type of key2\n"; }
-
-                if ( key1 >= key2 ) {
-                    res.push_back( 0 );
-                    continue;
-                }
-
-                res.push_back ( range_query ( tree, key1, key2 ) );
-            }
-            else if ( type ) { throw "Error: invalit type\n"; }
-        }
-    }
-
-    void get_answer ( const std::string& filename, std::vector<int>& ans )
-    {
-        std::ifstream file ( filename );
-        if (!file) {
-            std::cout << "error\n";
-            exit(1);
-        }
-
-        using KeyT = int;
-        std::set<KeyT> tree = {};
-    
-        char type = 0;
-        while ( file >> type ) {
-            if ( type == 'k' ) {
-                KeyT key = 0;
-                file >> key;
-                if ( !file.good() ) { throw "Error : invalid type of key\n"; } 
-
-                tree.insert ( key );
-            }
-            else if ( type == 'q' ) {
-                KeyT key1 = 0;
-                KeyT key2 = 0;
-
-                file >> key1;
-                if ( !std::cin.good() ) { throw "Error : invalid type of key1\n"; } 
-
-                file >> key2;
-                if ( !std::cin.good() ) { throw "Error : invalid type of key2\n"; }
-
-                if ( key1 >= key2 ) {
-                    ans.push_back( 0 );
-                    continue;
-                }
-
-                ans.push_back ( std::distance ( tree.lower_bound( key1 ), tree.upper_bound ( key2 )  ) );
-            }  
-            else if ( type ) { throw "Error: invalit type\n"; }
-        }
-    }
-
-	void run_test (const std::string& test_name)
+    void get_data (const std::string& filename, Trees::SearchTree<int, int> &tree)
 	{
-		std::string test_directory = "/tests";
+        std::ifstream file ( filename );
+        if (!file) {
+            std::cerr << "error\n";
+            exit(1);
+        }
 
+        char type = 0;
+        while ( file >> type ) {
+            if ( type == 'k' ) {
+                int key = 0;
+                file >> key;
+                if ( !file.good() ) { throw "Error : invalid type of key\n"; }
+
+                tree.insert ( key );
+            }
+            else if ( type == 'q' ) {
+                int key1 = 0;
+                int key2 = 0;
+
+                file >> key1;
+                if ( !std::cin.good() ) { throw "Error : invalid type of key1\n"; }
+
+                file >> key2;
+                if ( !std::cin.good() ) { throw "Error : invalid type of key2\n"; }
+            }
+            else if ( type ) { throw "Error: invalit type\n"; }
+        }
+    }
+
+	void copy_ctor_test (const std::string& test_name)
+	{
+        std::string test_directory = "/tests";
+		std::string test_path = std::string ( TEST_DATA_DIR) + test_directory + test_name;
+
+        Trees::SearchTree<int, int> tree = {};
+
+        get_data ( test_path, tree );
+
+        Trees::SearchTree<int, int> lhs = tree;
+
+        EXPECT_TRUE(tree.size() == lhs.size());
+        for ( auto itt = tree.begin(), itt_lhs = lhs.begin(), end = tree.end() ; itt != end; ++itt, ++itt_lhs ) {
+            EXPECT_EQ ( *itt , *itt_lhs );
+        }
+	}
+
+    void copy_assignment_test ( const std::string& test_name )
+	{
+        std::string test_directory = "/tests";
 		std::string test_path = std::string(TEST_DATA_DIR) + test_directory + test_name;
 
-        std::vector<int> res;
-		get_result(test_path, res);
+        Trees::SearchTree<int, int> tree = {};
+        get_data ( test_path, tree );
 
-        std::vector<int> ans;
-		get_answer(test_path, ans);
+        std::vector<int> data = {};
+        for ( auto itt = tree.begin(), end = tree.end() ; itt != end; ++itt ) {
+            data.push_back ( *itt );
+        }
 
-        EXPECT_TRUE(res.size() == ans.size());
-        for (int i = 0; i < ans.size(); i++)
-        {
-            EXPECT_EQ(res[i], ans[i]);
+        Trees::SearchTree<int, int> lhs = {};
+        lhs = tree;
+
+        EXPECT_TRUE(data.size() == lhs.size());
+        auto itt_lhs = lhs.begin();
+        for ( auto itt = data.begin(), end = data.end() ; itt != end; ++itt, ++itt_lhs ) {
+            EXPECT_EQ ( *itt , *itt_lhs );
+        }
+	}
+
+    void move_ctor_test ( const std::string& test_name )
+	{
+        std::string test_directory = "/tests";
+		std::string test_path = std::string(TEST_DATA_DIR) + test_directory + test_name;
+
+        Trees::SearchTree<int, int> tree = {};
+        get_data ( test_path, tree );
+
+        std::vector<int> data = {};
+        for ( auto itt = tree.begin(), end = tree.end() ; itt != end; ++itt ) {
+            data.push_back ( *itt );
+        }
+
+        Trees::SearchTree<int, int> lhs = std::move ( tree );
+
+        EXPECT_TRUE(data.size() == lhs.size());
+        auto itt_lhs = lhs.begin();
+        for ( auto itt = data.begin(), end = data.end() ; itt != end; ++itt, ++itt_lhs ) {
+            EXPECT_EQ ( *itt , *itt_lhs );
+        }
+	}
+
+    void move_assignment_test ( const std::string& test_name )
+	{
+        std::string test_directory = "/tests";
+		std::string test_path = std::string(TEST_DATA_DIR) + test_directory + test_name;
+
+        Trees::SearchTree<int, int> tree = {};
+        get_data ( test_path, tree );
+
+        std::vector<int> data = {};
+        for ( auto itt = tree.begin(), end = tree.end() ; itt != end; ++itt ) {
+            data.push_back ( *itt );
+        }
+
+        Trees::SearchTree<int, int> lhs = {};
+        lhs = std::move ( tree );
+
+        EXPECT_TRUE(data.size() == lhs.size());
+        auto itt_lhs = lhs.begin();
+        for ( auto itt = data.begin(), end = data.end() ; itt != end; ++itt, ++itt_lhs ) {
+            EXPECT_EQ ( *itt , *itt_lhs );
         }
 	}
 }

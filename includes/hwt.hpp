@@ -35,7 +35,7 @@ public:
     // auto lhs = ....;
     // ....
     // lhs = rhs;
-    SearchTree& operator= ( const SearchTree &tree ) { // copy =
+    SearchTree& operator= ( SearchTree &tree ) { // copy =
         SearchTree copy {tree};
         swap ( tree );
 
@@ -121,6 +121,7 @@ public:
 
         return iterator { result };
     }
+
 private:
     Node_s *balance ( Node_s *p )
     {
