@@ -17,9 +17,17 @@ class SearchTree { // final
 
     Node_s *min_key_node_ = nullptr;
     std::vector <Node_s *> nodes_ {};
-public:
 
+public:
     SearchTree () : top_(nullptr) {}
+
+    SearchTree ( std::initializer_list<KeyT> l ) : top_(nullptr) {
+        nodes_.reserve ( l.size() );
+
+        for ( auto itt : l ) {
+            insert ( itt );
+        }
+    }
 
     // auto lhs = rhs;
     // auto lhs{rhs};

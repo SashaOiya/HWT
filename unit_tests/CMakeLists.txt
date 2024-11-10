@@ -4,7 +4,7 @@ add_executable(hwt_unit_test
 set(TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../")
 
 set_target_properties(hwt_unit_test PROPERTIES
-	CXX_STANDART 20
+	CXX_STANDARD 20
 	CXX_STANDARD_REQUIRED ON
 	CXX_EXTENSIONS OFF
 )

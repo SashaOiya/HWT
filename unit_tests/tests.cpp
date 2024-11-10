@@ -1,27 +1,69 @@
-#include <fstream>
-#include <string>
-
 #include <gtest/gtest.h>
-
 #include "hwt.hpp"
-#include "funcs.hpp"
 
 TEST ( test1, test1_unit )
 {
-	test_funcs::copy_ctor_test ( "/test1.txt" );
+	Trees::SearchTree<int, int> tree = { -4, 9, 6, 4, -11, 0, 7, 4 };
+
+	std::vector<int> data = {};
+	for ( auto itt : tree ) {
+		data.push_back ( itt );
+	}
+
+	Trees::SearchTree<int, int> lhs = std::move ( tree );
+
+	EXPECT_TRUE ( data.size() == lhs.size() );
+	auto itt_lhs = lhs.begin();
+	for ( auto itt = data.begin(), end = data.end() ; itt != end; ++itt, ++itt_lhs ) {
+		EXPECT_EQ ( *itt , *itt_lhs );
+	}
 }
 
 TEST ( test2, test2_unit )
 {
-	test_funcs::copy_assignment_test ( "/test2.txt" );
+	Trees::SearchTree<int, int> tree = { 1, 2, 3, 4, 6, 7, 8, 12, 1};
+	Trees::SearchTree<int, int> lhs = tree;
+
+	EXPECT_TRUE ( tree.size() == lhs.size() );
+	for ( auto itt = tree.begin(), itt_lhs = lhs.begin(), end = tree.end() ; itt != end; ++itt, ++itt_lhs ) {
+		EXPECT_EQ ( *itt , *itt_lhs );
+	}
 }
 
 TEST ( test3, test3_unit )
 {
-	test_funcs::move_ctor_test ( "/test3.txt" );
+	Trees::SearchTree<int, int> tree = { 3, 6, 9, 1, 5, 10, 22 };
+
+	std::vector<int> data = {};
+	for ( auto itt : tree ) {
+		data.push_back ( itt );
+	}
+
+	Trees::SearchTree<int, int> lhs = {};
+	lhs = tree;
+
+	EXPECT_TRUE(data.size() == lhs.size());
+	auto itt_lhs = lhs.begin();
+	for ( auto itt = data.begin(), end = data.end() ; itt != end; ++itt, ++itt_lhs ) {
+		EXPECT_EQ ( *itt , *itt_lhs );
+	}
 }
 
 TEST ( test4, test4_unit )
 {
-	test_funcs::move_assignment_test ( "/test4.txt" );
+	Trees::SearchTree<int, int> tree = { 5, 8, 9, 12, 3, -4, 67, 18 };
+
+	std::vector<int> data = {};
+	for ( auto itt : tree ) {
+		data.push_back ( itt );
+	}
+
+	Trees::SearchTree<int, int> lhs = {};
+	lhs = std::move ( tree );
+
+	EXPECT_TRUE(data.size() == lhs.size());
+	auto itt_lhs = lhs.begin();
+	for ( auto itt = data.begin(), end = data.end() ; itt != end; ++itt, ++itt_lhs ) {
+		EXPECT_EQ ( *itt , *itt_lhs );
+	}
 }
