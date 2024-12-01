@@ -24,3 +24,11 @@ make
 ./hwt *
 ```
 где вместо * укажите либо "< my_file_name.txt", либо ничего не указывайте и нажмите Enter, после чего вводите свои данные в формате моих тестов.
+## Benchmark :
+Чтобы посмотреть benchmark,вам понадобится установить Google Benchmark (https://github.com/google/benchmark). 
+Запустить можно из корневой папки программы:
+```sh
+cd benchmark/
+ g++ -o bench bench.cpp -std=c++20 -lpthread -lbenchmark
+./bench
+```
