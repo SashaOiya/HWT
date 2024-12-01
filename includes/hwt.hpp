@@ -43,9 +43,9 @@ public:
     // auto lhs = ....;
     // ....
     // lhs = rhs;
-    SearchTree& operator= ( SearchTree &tree ) { // copy =
+    SearchTree& operator= ( const SearchTree &tree ) { // copy =
         SearchTree copy {tree};
-        swap ( tree );
+        swap ( copy );
 
         return *this;
     }
@@ -53,13 +53,16 @@ public:
     // auto lhs = std::move(rhs);
     // auto lhs{std::move(rhs)};
     // auto lhs(std::move(rhs));
-    SearchTree ( SearchTree &&rhs ) : nodes_( std::move ( rhs.nodes_ ) ), min_key_node_( std::move ( rhs.min_key_node_ ) ),
-                                      top_( std::move ( rhs.top_ ) ) {} // move ctor
+    SearchTree ( SearchTree &&rhs ) noexcept : nodes_ ( std::move ( rhs.nodes_ ) )
+    {
+        min_key_node_ = std::exchange ( rhs.min_key_node_, nullptr );
+        top_ = std::exchange ( rhs.top_, nullptr );
+    } // move ctor
 
     // auto lhs = ....;
     // ....
     // lhs = std::move(rhs);
-    SearchTree operator= ( SearchTree &&rhs ) // move =
+    SearchTree operator= ( SearchTree &&rhs ) noexcept // move =
     {
         swap ( rhs );
         return *this;
@@ -67,7 +70,10 @@ public:
 
     ~SearchTree()
     {
-        std::destroy ( nodes_.begin(), nodes_.end() );
+        //std::destroy ( nodes_.begin(), nodes_.end() );
+        for ( auto itt = nodes_.begin(); itt != nodes_.end(); ++itt ) {
+            delete (*itt);
+        }
     }
 
     size_t size() const
