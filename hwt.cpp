@@ -1,5 +1,4 @@
 #include "includes/hwt.hpp"
-#include <fstream>
 
 using KeyT = int;
 

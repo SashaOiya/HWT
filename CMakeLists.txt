@@ -12,6 +12,7 @@ if(DUMP)
 endif()
 
 find_package(GTest REQUIRED)
+find_package(benchmark REQUIRED)
 enable_testing()
 add_subdirectory(e2e_tests)
 add_subdirectory(unit_tests)

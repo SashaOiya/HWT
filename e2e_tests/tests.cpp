@@ -1,9 +1,7 @@
-#include <fstream>
 #include <string>
 
 #include <gtest/gtest.h>
 
-#include "hwt.hpp"
 #include "funcs.hpp"
 
 TEST(test1, test1)
