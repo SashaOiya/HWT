@@ -4,16 +4,13 @@
 #include <fstream>
 #include <vector>
 
-#include "../includes/hwt.hpp"
+#include "hwt.hpp"
 
 using KeyT = int;
 
-auto range_query ( const Trees::SearchTree<KeyT, KeyT> &tree, const KeyT& fst, const KeyT& snd )
+auto range_query ( Trees::SearchTree<KeyT, KeyT> &tree, const KeyT& fst, const KeyT& snd )
 {
-    auto start = tree.lower_bound ( fst );
-    auto fin = tree.upper_bound ( snd );
-
-    return std::distance ( start, fin );
+    return tree.my_distance(fst, snd);
 }
 
 void get_result ( const std::string& filename )
@@ -98,14 +95,14 @@ void get_answer ( const std::string& filename )
 
 static void BM_MyTree(benchmark::State& state) {
     for (auto _ : state) {
-        const std::string path = "../tests/test1.txt";
+        const std::string path = "../tests/test2.txt";
         get_result ( path );
     }
 }
 
 static void BM_StdSet(benchmark::State& state) {
     for (auto _ : state) {
-        const std::string path = "../tests/test1.txt";
+        const std::string path = "../tests/test2.txt";
         get_answer ( path );
     }
 }

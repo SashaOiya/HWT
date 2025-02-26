@@ -1,18 +1,22 @@
 #include "includes/hwt.hpp"
+#include <cassert>
+#include <chrono>
 
 using KeyT = int;
 
-auto range_query ( const Trees::SearchTree<KeyT, KeyT> &tree, const KeyT& fst, const KeyT& snd )
+auto range_query ( Trees::SearchTree<KeyT, KeyT> &tree, const KeyT& fst, const KeyT& snd )
 {
-    auto start = tree.lower_bound ( fst );
-    auto fin = tree.upper_bound ( snd );
+    if ( fst >= snd ) {
+        return 0;
+    }
 
-    return std::distance ( start, fin );
+    return tree.my_distance(fst, snd);
 }
 
 int main ()
 {
     Trees::SearchTree<KeyT, KeyT> tree = {};
+    std::chrono::duration<double> total_time{0};
 
     char type = 0;
     while ( std::cin >> type ) {
@@ -41,20 +45,20 @@ int main ()
                 return EXIT_FAILURE;
             }
 
-            if ( key1 >= key2 ) {
-                std::cout << 0 << ' ';
-                continue;
-            }
-            std:: cout << range_query ( tree, key1, key2 ) << ' ';
+            auto begin_time_of_range_query = std::chrono::high_resolution_clock::now();
+            std:: cout << range_query ( tree, key1, key2 ) << ' '; 
+            auto end_time_of_range_query = std::chrono::high_resolution_clock::now();
+            total_time += end_time_of_range_query - begin_time_of_range_query;
         }
         else if ( type ) {
             std::cout << "Error: invalit type\n";
             return EXIT_FAILURE;
         }
     }
-    std::cout << std::endl;
+    std::cout << "Total time: " << std::chrono::duration_cast<std::chrono::microseconds>(total_time).count();
+    std::cerr << " in microseconds" << std::endl;
 
-    #ifdef DUMP
+#ifdef DUMP
        tree.graph_dump("../tree.dot");
     #endif
 

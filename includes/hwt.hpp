@@ -1,294 +1,321 @@
 #pragma once
 
+#include <fstream>
 #include <iostream>
+#include <stack>
 #include <utility>
 #include <vector>
+
 #include "node_iterator.hpp"
-#include <stack>
-#include <fstream>
 
 namespace Trees {
 
 template <typename KeyT, typename Comp>
-class SearchTree { // final
-    using iterator = hwt::iterator<KeyT>;
-    using Node_s   = hwt::Node_s<KeyT>;
-    Node_s *top_ = nullptr;
+class SearchTree {
+	using iterator = hwt::iterator<KeyT>;
+	using Node_s = hwt::Node_s<KeyT>;
+	Node_s *top_ = nullptr;
 
-    Node_s *min_key_node_ = nullptr;
-    std::vector <Node_s *> nodes_ {};
+	Node_s *min_key_node_ = nullptr;
+	std::vector<Node_s *> nodes_{};
 
-public:
-    SearchTree () : top_(nullptr) {}
+   public:
+	SearchTree() : top_(nullptr) {
+	}
 
-    SearchTree ( std::initializer_list<KeyT> l ) : top_(nullptr) {
-        nodes_.reserve ( l.size() );
+	SearchTree(std::initializer_list<KeyT> l) : top_(nullptr) {
+		nodes_.reserve(l.size());
 
-        for ( auto itt : l ) {
-            insert ( itt );
-        }
-    }
+		for (auto itt : l) {
+			insert(itt);
+		}
+	}
 
-    // auto lhs = rhs;
-    // auto lhs{rhs};
-    // auto lhs(rhs);
-    SearchTree ( const SearchTree &tree ) : top_(nullptr) { // copy ctor
-        nodes_.reserve ( tree.size() );
+	SearchTree(const SearchTree &tree) : top_(nullptr) {
+		nodes_.reserve(tree.size());
 
-        for ( auto &i : tree.nodes_ ){
-            insert ( i->key_ );
-        }
-    }
+		for (auto &i : tree.nodes_) {
+			insert(i->key_);
+		}
+	}
 
-    // auto lhs = ....;
-    // ....
-    // lhs = rhs;
-    SearchTree& operator= ( const SearchTree &tree ) { // copy =
-        SearchTree copy {tree};
-        swap ( copy );
+	SearchTree &operator=(const SearchTree &tree) {
+		SearchTree copy{tree};
+		swap(copy);
 
-        return *this;
-    }
+		return *this;
+	}
 
-    // auto lhs = std::move(rhs);
-    // auto lhs{std::move(rhs)};
-    // auto lhs(std::move(rhs));
-    SearchTree ( SearchTree &&rhs ) noexcept : nodes_ ( std::move ( rhs.nodes_ ) )
-    {
-        min_key_node_ = std::exchange ( rhs.min_key_node_, nullptr );
-        top_ = std::exchange ( rhs.top_, nullptr );
-    } // move ctor
+	SearchTree(SearchTree &&rhs) noexcept : nodes_(std::move(rhs.nodes_)) {
+		min_key_node_ = std::exchange(rhs.min_key_node_, nullptr);
+		top_ = std::exchange(rhs.top_, nullptr);
+	}
 
-    // auto lhs = ....;
-    // ....
-    // lhs = std::move(rhs);
-    SearchTree operator= ( SearchTree &&rhs ) noexcept // move =
-    {
-        swap ( rhs );
-        return *this;
-    }
+	SearchTree operator=(SearchTree &&rhs) noexcept {
+		swap(rhs);
+		return *this;
+	}
 
-    ~SearchTree()
-    {
-        //std::destroy ( nodes_.begin(), nodes_.end() );
-        for ( auto itt = nodes_.begin(); itt != nodes_.end(); ++itt ) {
-            delete (*itt);
-        }
-    }
+	~SearchTree() {
+		for (auto itt = nodes_.begin(); itt != nodes_.end(); ++itt) {
+			delete (*itt);
+		}
+	}
+	size_t size() const {
+		return nodes_.size();
+	}
 
-    size_t size() const
-    {
-        return nodes_.size();
-    }
+	iterator begin() const {
+		return iterator(min_key_node_);
+	}
 
-    iterator begin () const
-    {
-        return iterator ( min_key_node_ );
-    }
+	iterator end() const {
+		return iterator(nullptr);
+	}
 
-    iterator end () const
-    {
-        return iterator(nullptr);
-    }
+	bool empty() const {
+		return !top_;
+	}
 
-    bool empty () const  { return !top_; }
+	void insert(const KeyT &value) {
+		insert_node(value);
+	}
 
-    void insert ( const KeyT& value )
-    {
-        top_ = insert ( top_, value, nullptr );
-    }
+	void swap(SearchTree &tree) noexcept {
+		std::swap(top_, tree.top_);
+		std::swap(nodes_, tree.nodes_);
+		std::swap(min_key_node_, tree.min_key_node_);
+	}
 
-    void swap ( SearchTree& tree ) noexcept
-    {
-        std::swap ( top_, tree.top_ );
-        std::swap ( nodes_, tree.nodes_ );
-        std::swap ( min_key_node_, tree.min_key_node_ );
-    }
+	auto lower_bound(const KeyT &value) const {
+		Node_s *node = top_;
+		Node_s *result = nullptr;
 
-    iterator lower_bound ( const KeyT& value ) const
-    {
-        Node_s* node = top_;
-        Node_s* result = nullptr;
+		while (node) {
+			if (node->key_ >= value) {
+				result = std::exchange(node, node->left_);
+			} else {
+				node = node->right_;
+			}
+		}
 
-        while ( node ) {
-            if ( node->key_ >= value ) {
-                result = std::exchange(node, node->left_ );
-            } else {
-                node = node->right_;
-            }
-        }
+		return iterator{result};
+	}
 
-        return iterator { result };
-    }
+	auto upper_bound(const KeyT &value) const {
+		Node_s *node = top_;
+		Node_s *result = nullptr;
+		while (node) {
+			if (node->key_ > value) {
+				result = std::exchange(node, node->left_);
+			} else {
+				node = node->right_;
+			}
+		}
 
-    iterator upper_bound ( const KeyT& value ) const
-    {
-        Node_s* node = top_;
-        Node_s* result = nullptr;
-        while ( node ) {
-            if ( node->key_ > value ) {
-                result = std::exchange(node, node->left_ );
-            } else {
-                node = node->right_;
-            }
-        }
+		return iterator{result};
+	}
 
-        return iterator { result };
-    }
+	int getRank(Node_s *node, int val) {
+		int rank = 0;
+		while (node) {
+			if (val < node->key_) {
+				node = node->left_;
+			} else {
+				rank += get_size(node->left_) + 1;
+				if (val == node->key_) break;
+				node = node->right_;
+			}
+		}
+		return rank;
+	}
 
-private:
-    Node_s *balance ( Node_s *p )
-    {
-        fix_height ( p );
+	int my_distance(int x, int y) {
+		return getRank(top_, y) - getRank(top_, x - 1);
+	}
 
-        const int b_factor_value = b_factor ( p );
-        if ( b_factor_value == 2 )
-        {
-            if ( b_factor ( p->right_ ) < 0 ) {
-                p->right_ = rotate_right ( p->right_ );
-            }
-            return rotate_left ( p );
-        }
-        if ( b_factor_value == -2 )
-        {
-            if ( b_factor ( p->left_ ) > 0  ) {
-                p->left_ = rotate_left ( p->left_ );
-            }
-            return rotate_right ( p );
-        }
+   private:
+	int get_height(const Node_s *p) const {
+		return p ? p->height_ : 0;
+	}
+	int get_size(const Node_s *p) const {
+		return p ? p->size_ : 0;
+	}
 
-        return p;
-    }
+	void insert_node(const KeyT &key) {
+		if (!top_) {
+			top_ = new Node_s(key, top_);
+			nodes_.push_back(top_);
+			min_key_node_ = top_;
 
-    auto insert ( Node_s *node, const KeyT &key, Node_s* parent)
-    {
-        if ( !node ) {
-            auto new_node = new Node_s( key, parent );
-            nodes_.push_back ( new_node );
-            if (!min_key_node_ || key < min_key_node_->key_) {
-                min_key_node_ = new_node;
-            }
+			return;
+		}
 
-            return new_node;
-        }
+		std::stack<Node_s *> path = {};
+		Node_s *current = top_;
+		Node_s *parent = nullptr;
 
-        if ( key < node->key_ ) {
-            node->left_ = insert ( node->left_, key, node );
-            fix_height ( node->left_ );
-        }
-        else if ( node->key_ < key ) {
-            node->right_ = insert ( node->right_, key, node );
-            fix_height ( node->right_ );
-        }
+		while (current) {
+			path.push(current);	
+			parent = current;
+			if (key < current->key_) {
+				current = current->left_;
+			} else if (key > current->key_) {
+				current = current->right_;
+			} else {
+				return;
+			}
+		}
 
-        return balance ( node );
-    }
+		Node_s *new_node = new Node_s(key, path.top());
+		if (key < parent->key_) {
+			parent->left_ = new_node;
+		} else {
+			parent->right_ = new_node;
+		}
+		nodes_.push_back(new_node);
+		if (key < min_key_node_->key_) {  
+			min_key_node_ = new_node;
+		}
 
-    void fix_height ( Node_s *p )
-    {
-        int hl = height ( p->left_ );
-        int hr = height ( p->right_ );
+		while (!path.empty()) {
+			current = path.top();
+			path.pop();
 
-        p->height_ = 1 + std::max ( hl, hr );
-    }
+			fix_height(current);		
+			current = balance(current);	 
 
-    int height ( const Node_s *p ) const
-    {
-        return p ? p->height_ : 0;
-    }
+			if (path.empty()) {
+				top_ = current;
+			} else {
+				if (current->key_ < path.top()->key_) {
+					path.top()->left_ = current;
+				} else {
+					path.top()->right_ = current;
+				}
+			}
+		}
 
-    int b_factor ( const Node_s *p ) const
-    {
-        return height ( p->right_ ) - height ( p->left_ );
-    }
+		return;
+	}
 
+	Node_s *balance(Node_s *p) {
+		fix_height(p);
 
-    Node_s *rotate_left ( Node_s *q )
-    {
-        Node_s *p = q->right_; // copy
-        q->right_ = p->left_;
-        if (p->left_) p->left_->parent_ = q;
-        p->left_ = q;
-        p->parent_ = q->parent_;
-        q->parent_ = p;
+		const int b_factor_value = b_factor(p);
+		if (b_factor_value == 2) {
+			if (b_factor(p->right_) < 0) {
+				p->right_ = rotate_right(p->right_);
+			}
+			return rotate_left(p);
+		}
+		if (b_factor_value == -2) {
+			if (b_factor(p->left_) > 0) {
+				p->left_ = rotate_left(p->left_);
+			}
+			return rotate_right(p);
+		}
 
-        fix_height ( q );
-        fix_height ( p );
+		return p;
+	}
 
-        return p;
-    }
+	int b_factor(const Node_s *p) const {
+		return get_height(p->right_) - get_height(p->left_);
+	}
 
-    Node_s *rotate_right ( Node_s *node )
-    {
-        Node_s *new_node = node->left_;
-        node->left_ = new_node->right_;
-        if (new_node->right_) new_node->right_->parent_ = node;
-        new_node->right_ = node;
-        new_node->parent_ = node->parent_;
-        node->parent_ = new_node;
+	void fix_height(Node_s *p) {  // and size
+		p->height_ = 1 + std::max(get_height(p->left_), get_height(p->right_));
+		p->size_ = get_size(p->left_) + get_size(p->right_) + 1;
+	}
 
-        fix_height ( node );
-        fix_height ( new_node );
+	Node_s *rotate_left(Node_s *q) {
+		Node_s *p = q->right_;	// copy
+		q->right_ = p->left_;
+		if (p->left_) p->left_->parent_ = q;
+		p->left_ = q;
+		p->parent_ = q->parent_;
+		q->parent_ = p;
 
-        return new_node;
-    }
+		fix_height(q);
+		fix_height(p);
 
-    void graph_dump_nodes ( std::ofstream& file, Node_s *root) const
-    {
-        if (!root) return;
+		return p;
+	}
 
-        std::stack<Node_s *> stack = {};
-        stack.push(root);
+	Node_s *rotate_right(Node_s *node) {
+		Node_s *new_node = node->left_;
+		node->left_ = new_node->right_;
+		if (new_node->right_) new_node->right_->parent_ = node;
+		new_node->right_ = node;
+		new_node->parent_ = node->parent_;
+		node->parent_ = new_node;
 
-        bool is_root = true;
-        while (!stack.empty())
-        {
-            auto node = stack.top();
+		fix_height(node);
+		fix_height(new_node);
 
-            file << "\"" << node << "\"" << "[shape = Mrecord, style = filled, fillcolor = lightpink "
-                                    "label = \"" << node->key_ << "\"]" << std::endl;
+		return new_node;
+	}
 
-            if (!is_root) file << "\"" << node->parent_ << "\"" << " -> " << "\"" << node << "\"" << std::endl;
-            else          is_root = false;
+	void graph_dump_nodes(std::ofstream &file, Node_s *root) const {
+		if (!root) return;
 
-            stack.pop();
+		std::stack<Node_s *> stack = {};
+		stack.push(root);
 
-            if ( node->right_ ) { stack.push(node->right_); }
-            if ( node->left_  ) { stack.push(node->left_); }
-        }
-    }
+		bool is_root = true;
+		while (!stack.empty()) {
+			auto node = stack.top();
 
-public:
-    void graph_dump ( std::string filename ) const
-        {
-            std::ofstream file ( filename );
-            file << "digraph G {" << std::endl << "node [shape = record];" << std::endl;
+			file << "\"" << node << "\""
+				 << "[shape = Mrecord, style = filled, fillcolor = lightpink "
+					"label = \""
+				 << node->key_ << "\"]" << std::endl;
 
-            if ( top_ ) graph_dump_nodes (file, top_ );
+			if (!is_root)
+				file << "\"" << node->parent_ << "\"" << " -> " << "\"" << node << "\""
+					 << std::endl;
+			else
+				is_root = false;
 
-            file << "}";
-            file.close();
+			stack.pop();
 
-            std::string command = "dot -T png " + filename + " -o ../logs/tree.png";
-            std::system ( command.c_str() );
-        }
+			if (node->right_) {
+				stack.push(node->right_);
+			}
+			if (node->left_) {
+				stack.push(node->left_);
+			}
+		}
+	}
 
-    void text_dump ( const Node_s *tree_node )
-    {
-        if ( tree_node == nullptr) {
-            printf ( " nil " );
+   public:
+	void graph_dump(std::string filename) const {
+		std::ofstream file(filename);
+		file << "digraph G {" << std::endl << "node [shape = record];" << std::endl;
 
-            return ;
-        }
-        printf ( " ( " );
-        printf ( "%d", tree_node->key_ );
+		if (top_) graph_dump_nodes(file, top_);
 
-        Tree_Text_Dump ( tree_node->left_  );
-        Tree_Text_Dump ( tree_node->right_ );
+		file << "}";
+		file.close();
 
-        printf ( " ) " );
+		std::string command = "dot -T png " + filename + " -o ../logs/tree.png";
+		std::system(command.c_str());
+	}
 
-    }
+	void text_dump(const Node_s *tree_node) {
+		if (tree_node == nullptr) {
+			printf(" nil ");
+
+			return;
+		}
+		printf(" ( ");
+		printf("%d", tree_node->key_);
+
+		Tree_Text_Dump(tree_node->left_);
+		Tree_Text_Dump(tree_node->right_);
+
+		printf(" ) ");
+	}
 };
 
-}
+}  // namespace Trees

@@ -1,0 +1,9 @@
+add_executable(hwt_benchmark
+			   bench.cpp)
+
+target_link_libraries(hwt_benchmark
+PRIVATE
+    benchmark::benchmark
+)
+
+target_include_directories(hwt_benchmark PUBLIC ${PROJECT_SOURCE_DIR}/includes )
