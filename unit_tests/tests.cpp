@@ -4,7 +4,7 @@
 
 #include "hwt.hpp"
 
-TEST(my_AVL_tree, copy_ctor) {
+TEST(AVL_tree, copy_ctor) {
     my_tree::SearchTree<int, int> tree = {1, 2, 3, 4, 6, 7, 8, 12, 1};
     my_tree::SearchTree<int, int> lhs = tree;
 
@@ -15,7 +15,7 @@ TEST(my_AVL_tree, copy_ctor) {
     }
 }
 
-TEST(my_AVL_tree, copy_assignment) {
+TEST(AVL_tree, copy_assignment) {
     my_tree::SearchTree<int, int> tree = {3, 6, 9, 1, 5, 10, 22};
 
     std::vector<int> data = {};
@@ -33,7 +33,7 @@ TEST(my_AVL_tree, copy_assignment) {
     }
 }
 
-TEST(my_AVL_tree, move_ctor) {
+TEST(AVL_tree, move_ctor) {
     my_tree::SearchTree<int, int> tree = {-4, 9, 6, 4, -11, 0, 7, 4};
 
     std::vector<int> data = {};
@@ -50,7 +50,7 @@ TEST(my_AVL_tree, move_ctor) {
     }
 }
 
-TEST(my_AVL_tree, move_assignment) {
+TEST(AVL_tree, move_assignment) {
     my_tree::SearchTree<int, int> tree = {5, 8, 9, 12, 3, -4, 67, 18};
 
     std::vector<int> data = {};

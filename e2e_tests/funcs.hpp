@@ -81,7 +81,7 @@ void get_answer(const std::string &filename, std::vector<int> &ans) {
             KeyT key = 0;
             file >> key;
             if (!file.good()) {
-                throw "Error : invalid type of key\n";
+                throw std::runtime_error ("Invalid key");
             }
 
             tree.insert(key);
@@ -91,12 +91,12 @@ void get_answer(const std::string &filename, std::vector<int> &ans) {
 
             file >> key1;
             if (!std::cin.good()) {
-                throw "Error : invalid type of key1\n";
+                throw std::runtime_error ("Invalid key1");
             }
 
             file >> key2;
             if (!std::cin.good()) {
-                throw "Error : invalid type of key2\n";
+                throw std::runtime_error ("Invalid key2");
             }
 
             if (key1 >= key2) {
@@ -106,7 +106,7 @@ void get_answer(const std::string &filename, std::vector<int> &ans) {
 
             ans.push_back(std::distance(tree.lower_bound(key1), tree.upper_bound(key2)));
         } else if (type) {
-            throw "Error: invalit type\n";
+            throw std::invalid_argument ("Invalid type");
         }
     }
 }

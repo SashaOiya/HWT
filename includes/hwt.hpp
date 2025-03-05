@@ -86,50 +86,39 @@ class SearchTree final {
             return;
         }
 
-        std::stack<Node *> path = {};
         Node *current = top_;
         Node *parent = nullptr;
 
         while (current) {
-            path.push(current);
             parent = current;
             if (key < current->key_) {
                 current = current->left_;
-            } else if (key > current->key_) {
+            } else if (current->key_ < key) {
                 current = current->right_;
             } else {
                 return;
             }
         }
 
-        Node *new_node = new Node(key, path.top());
+        current = new Node(key, parent);
         if (key < parent->key_) {
-            parent->left_ = new_node;
+            parent->left_ = current;
         } else {
-            parent->right_ = new_node;
+            parent->right_ = current;
         }
-        nodes_.push_back(new_node);
+
+        nodes_.push_back(current);
         if (key < min_key_node_->key_) {
-            min_key_node_ = new_node;
+            min_key_node_ = current;
         }
 
-        while (!path.empty()) {
-            current = path.top();
-            path.pop();
+        Node *node = current;
 
-            Node::fix_height(current);
-            current = balance(current);
-
-            if (path.empty()) {
-                top_ = current;
-            } else {
-                if (current->key_ < path.top()->key_) {
-                    path.top()->left_ = current;
-                } else {
-                    path.top()->right_ = current;
-                }
-            }
+        while (node) {
+            node = balance(node);
+            node = node->parent_;
         }
+
         return;
     }
 
@@ -158,7 +147,7 @@ class SearchTree final {
         Node *node = top_;
         Node *result = nullptr;
         while (node) {
-            if (node->key_ > value) {
+            if (value < node->key_ ) {
                 result = std::exchange(node, node->left_);
             } else {
                 node = node->right_;
@@ -208,11 +197,21 @@ class SearchTree final {
     }
 
     Node *rotate_left(Node *q) {
-        Node *p = q->right_;  // copy
+        auto p = q->right_;
         q->right_ = p->left_;
         if (p->left_) p->left_->parent_ = q;
         p->left_ = q;
+
         p->parent_ = q->parent_;
+        if (q->parent_) {
+            if (q->parent_->left_ == q)
+                q->parent_->left_ = p;
+            else
+                q->parent_->right_ = p;
+        } else {
+            top_ = p;
+        }
+
         q->parent_ = p;
 
         Node::fix_height(q);
@@ -221,18 +220,27 @@ class SearchTree final {
         return p;
     }
 
-    Node *rotate_right(Node *node) {
-        Node *new_node = node->left_;
-        node->left_ = new_node->right_;
-        if (new_node->right_) new_node->right_->parent_ = node;
-        new_node->right_ = node;
-        new_node->parent_ = node->parent_;
-        node->parent_ = new_node;
+    Node *rotate_right(Node *p) {
+        auto q = p->left_;
+        p->left_ = q->right_;
+        if (q->right_) q->right_->parent_ = p;
+        q->right_ = p;
 
-        Node::fix_height(node);
-        Node::fix_height(new_node);
+        q->parent_ = p->parent_;
+        if (p->parent_) {
+            if (p->parent_->left_ == p)
+                p->parent_->left_ = q;
+            else
+                p->parent_->right_ = q;
+        } else {
+            top_ = q;
+        }
+        p->parent_ = q;
 
-        return new_node;
+        Node::fix_height(p);
+        Node::fix_height(q);
+
+        return q;
     }
 
     void graph_dump_nodes(std::ofstream &file, Node *root) const {
@@ -277,7 +285,7 @@ class SearchTree final {
         file << "}";
         file.close();
 
-        std::string command = "dot -T png " + filename + " -o ../logs/tree.png";
+        std::string command = "dot -T png " + filename + " -o ../../logs/tree5.png";
         std::system(command.c_str());
     }
 
