@@ -4,7 +4,7 @@
 
 using KeyT = int;
 
-auto range_query(my_tree::SearchTree<KeyT, KeyT>& tree, const KeyT& fst, const KeyT& snd) {
+auto range_query(my_tree::SearchTree<KeyT, KeyT>& tree, const KeyT fst, const KeyT snd) {
     if (fst >= snd) {
         return 0;
     }
@@ -17,8 +17,11 @@ int main() try {
 
     char type = 0;
     while (std::cin >> type) {
+        if (!std::cin.good()) {
+            throw std::runtime_error("Invalid type of variable");
+        }
         if (type == 'k') {
-            KeyT key = 0;
+            KeyT key;
             std::cin >> key;
             if (!std::cin.good()) {
                 throw std::runtime_error("Invalid key");
@@ -26,8 +29,7 @@ int main() try {
 
             tree.insert(key);
         } else if (type == 'q') {
-            KeyT key1 = 0;
-            KeyT key2 = 0;
+            KeyT key1, key2;
 
             std::cin >> key1;
             if (!std::cin.good()) {
@@ -39,7 +41,7 @@ int main() try {
             }
 
             std::cout << range_query(tree, key1, key2) << ' ';
-        } else if (type) {
+        } else {
             throw std::invalid_argument("Invalid type");
         }
     }

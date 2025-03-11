@@ -112,14 +112,14 @@ void get_answer(const std::string& filename) {
 
 static void BM_MyTree(benchmark::State& state) {
     for (auto _ : state) {
-        const std::string path = "../tests/test2.txt";
+        const std::string path = "../benchmark/data/test2.txt";
         get_result(path);
     }
 }
 
 static void BM_StdSet(benchmark::State& state) {
     for (auto _ : state) {
-        const std::string path = "../tests/test2.txt";
+        const std::string path = "../benchmark/data/test2.txt";
         get_answer(path);
     }
 }
