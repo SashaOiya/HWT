@@ -1,111 +1,60 @@
 #include <benchmark/benchmark.h>
 
-#include <fstream>
-#include <iostream>
-#include <string>
-#include <vector>
+#include <set>
 
 #include "hwt.hpp"
 
 using KeyT = int;
 
-auto range_query(my_tree::SearchTree<KeyT, KeyT>& tree, const KeyT& fst, const KeyT& snd) {
-    return tree.my_distance(fst, snd);
+template <typename Tree_t>
+std::size_t range_query(const Tree_t& tree, const KeyT fst, const KeyT snd) {
+    if (fst >= snd) {
+        return 0;
+    }
+    if constexpr (std::is_same_v<Tree_t, my_tree::SearchTree<KeyT>>)
+        return tree.my_distance(fst, snd);
+    else
+        return std::distance(tree.lower_bound(fst), tree.upper_bound(snd));
 }
 
-void get_result(const std::string& filename) {
-    std::vector<int> res = {};
-    std::ifstream file(filename);
-    if (!file) {
-        std::cout << "Invalid filename : " << filename << '\n';
-        exit(1);
-    }
-
-    my_tree::SearchTree<KeyT, KeyT> tree = {};
-
-    char type = 0;
-    while (file >> type) {
-        if (type == 'k') {
-            KeyT key = 0;
-            file >> key;
-            if (!file.good()) {
-                std::cout << "Error : invalid type of key\n";
-                return;
-            }
-
-            tree.insert(key);
-        } else if (type == 'q') {
-            KeyT key1 = 0;
-            KeyT key2 = 0;
-
-            file >> key1;
-            if (!std::cin.good()) {
-                std::cout << "Error : invalid type of key1\n";
-                return;
-            }
-
-            file >> key2;
-            if (!std::cin.good()) {
-                std::cout << "Error : invalid type of key2\n";
-                return;
-            }
-
-            if (key1 >= key2) {
-                res.push_back(0);
-                continue;
-            }
-
-            res.push_back(range_query(tree, key1, key2));
-        } else if (type) {
-            std::cout << "Error: invalit type\n";
-            return;
-        }
-    }
-}
-
+template <typename Tree_t>
 void get_answer(const std::string& filename) {
-    std::vector<KeyT> ans = {};
     std::ifstream file(filename);
     if (!file) {
-        std::cout << "error\n";
-        exit(1);
+        throw std::runtime_error("Invalid filename");
     }
 
-    using KeyT = int;
-    std::set<KeyT> tree = {};
+    Tree_t tree = {};
+    std::vector<int> res = {};
 
     char type = 0;
     while (file >> type) {
+        if (!file.good()) {
+            throw std::runtime_error("Invalid type of variable");
+        }
         if (type == 'k') {
-            KeyT key = 0;
+            KeyT key;
             file >> key;
             if (!file.good()) {
-                throw "Error : invalid type of key\n";
+                throw std::runtime_error("Invalid key");
             }
 
             tree.insert(key);
         } else if (type == 'q') {
-            KeyT key1 = 0;
-            KeyT key2 = 0;
+            KeyT key1, key2;
 
             file >> key1;
-            if (!std::cin.good()) {
-                throw "Error : invalid type of key1\n";
+            if (!file.good()) {
+                throw std::runtime_error("Invalid key1");
             }
-
             file >> key2;
-            if (!std::cin.good()) {
-                throw "Error : invalid type of key2\n";
+            if (!file.good()) {
+                throw std::runtime_error("Invalid key2");
             }
 
-            if (key1 >= key2) {
-                ans.push_back(0);
-                continue;
-            }
-
-            ans.push_back(std::distance(tree.lower_bound(key1), tree.upper_bound(key2)));
-        } else if (type) {
-            throw "Error: invalit type\n";
+            res.push_back(range_query<Tree_t>(tree, key1, key2));
+        } else {
+            throw std::invalid_argument("Invalid type");
         }
     }
 }
@@ -113,14 +62,14 @@ void get_answer(const std::string& filename) {
 static void BM_MyTree(benchmark::State& state) {
     for (auto _ : state) {
         const std::string path = "../benchmark/data/test2.txt";
-        get_result(path);
+        get_answer<my_tree::SearchTree<KeyT>>(path);
     }
 }
 
 static void BM_StdSet(benchmark::State& state) {
     for (auto _ : state) {
         const std::string path = "../benchmark/data/test2.txt";
-        get_answer(path);
+        get_answer<std::set<KeyT>>(path);
     }
 }
 

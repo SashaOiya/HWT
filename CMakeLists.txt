@@ -2,17 +2,19 @@ cmake_minimum_required(VERSION 3.11)
 
 project(hwt LANGUAGES CXX)
 
-add_executable(hwt src/avl_tree.cpp)
-add_executable(set src/std_set.cpp)
-
-target_include_directories(hwt PUBLIC ${PROJECT_SOURCE_DIR}/includes )
+add_executable(hwt src/driver.cpp)
+target_include_directories(hwt PUBLIC ${PROJECT_SOURCE_DIR}/includes)
+target_compile_definitions(hwt PRIVATE AVL_TREE)
 
 option(DUMP "Builds a tree graph" OFF)
 if(DUMP)
 	target_compile_definitions(hwt PRIVATE DUMP)
 endif()
 
-set(CMAKE_CXX_STANDARD 20)
+add_executable(set src/driver.cpp)
+target_include_directories(set PUBLIC ${PROJECT_SOURCE_DIR}/includes)
+
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(GTest REQUIRED)

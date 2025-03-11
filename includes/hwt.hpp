@@ -10,7 +10,7 @@
 
 namespace my_tree {
 
-template <typename KeyT, typename Comp>
+template <typename KeyT>
 class SearchTree final {
     using Node = my_tree::Node<KeyT>;
     Node *top_ = nullptr;
@@ -147,7 +147,7 @@ class SearchTree final {
         Node *node = top_;
         Node *result = nullptr;
         while (node) {
-            if (value < node->key_ ) {
+            if (value < node->key_) {
                 result = std::exchange(node, node->left_);
             } else {
                 node = node->right_;
@@ -157,7 +157,7 @@ class SearchTree final {
         return iterator{result};
     }
 
-    int getRank(Node *node, const KeyT &val) {
+    int getRank(Node *node, const KeyT &val) const {
         int rank = 0;
         while (node) {
             if (val < node->key_) {
@@ -171,7 +171,7 @@ class SearchTree final {
         return rank;
     }
 
-    int my_distance(const KeyT &x, const KeyT &y) {
+    int my_distance(const KeyT &x, const KeyT &y) const {
         return getRank(top_, y) - getRank(top_, x - 1);
     }
 

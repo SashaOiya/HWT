@@ -1,19 +1,24 @@
-#include <cassert>
+#include <iostream>
+#include <set>
 
 #include "hwt.hpp"
 
 using KeyT = int;
 
-auto range_query(my_tree::SearchTree<KeyT, KeyT>& tree, const KeyT fst, const KeyT snd) {
+template <typename Tree_t>
+std::size_t range_query(const Tree_t& tree, const KeyT fst, const KeyT snd) {
     if (fst >= snd) {
         return 0;
     }
-
-    return tree.my_distance(fst, snd);
+    if constexpr (std::is_same_v<Tree_t, my_tree::SearchTree<KeyT>>)
+        return tree.my_distance(fst, snd);
+    else
+        return std::distance(tree.lower_bound(fst), tree.upper_bound(snd));
 }
 
-int main() try {
-    my_tree::SearchTree<KeyT, KeyT> tree = {};
+template <typename Tree_t>
+void get_answer() {
+    Tree_t tree = {};
 
     char type = 0;
     while (std::cin >> type) {
@@ -40,15 +45,25 @@ int main() try {
                 throw std::runtime_error("Invalid key2");
             }
 
-            std::cout << range_query(tree, key1, key2) << ' ';
+            std::cout << range_query<Tree_t>(tree, key1, key2) << ' ';
         } else {
             throw std::invalid_argument("Invalid type");
         }
     }
 
-#ifdef DUMP
+#if defined(AVL_TREE) && (DUMP)
     tree.graph_dump("../../tree.dot");
 #endif
+}
+
+int main() try {
+#if defined(AVL_TREE)
+    using tree_type = my_tree::SearchTree<KeyT>;
+#else
+    using tree_type = std::set<KeyT>;
+#endif
+
+    get_answer<tree_type>();
 
     return 0;
 } catch (const std::exception& e) {
