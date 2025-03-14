@@ -9,3 +9,4 @@ PRIVATE
 )
 
 target_include_directories(hwt_benchmark PUBLIC ${PROJECT_SOURCE_DIR}/includes)
+target_include_directories(hwt_benchmark PUBLIC ${PROJECT_SOURCE_DIR}/src)

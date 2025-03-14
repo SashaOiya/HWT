@@ -14,11 +14,13 @@ endif()
 add_executable(set src/driver.cpp)
 target_include_directories(set PUBLIC ${PROJECT_SOURCE_DIR}/includes)
 
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(GTest REQUIRED)
 find_package(benchmark REQUIRED)
+#find_package(CLI11 REQUIRED)
 enable_testing()
 add_subdirectory(test/e2e_tests)
 add_subdirectory(test/unit_tests)
