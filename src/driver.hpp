@@ -15,7 +15,7 @@ std::size_t range_query(const Tree_t& tree, const KeyT fst, const KeyT snd) {
     if (fst >= snd) {
         return 0;
     }
-    if constexpr (std::is_same_v<Tree_t, my_tree::SearchTree<KeyT>>)
+    if constexpr (std::is_same_v<Tree_t, avl_tree::SearchTree<KeyT>>)
         return tree.my_distance(fst, snd);
     else
         return std::distance(tree.lower_bound(fst), tree.upper_bound(snd));

@@ -1,24 +1,25 @@
 #pragma once
 
 #include <fstream>
-#include <iostream>
+#include <iterator>
+#include <memory>
 #include <stack>
 #include <utility>
 #include <vector>
 
 #include "node_iterator.hpp"
 
-namespace my_tree {
+namespace avl_tree {
 
 template <typename KeyT>
 class SearchTree final {
-    using Node = my_tree::Node<KeyT>;
+    using Node = TreeNode<KeyT>;
     Node *top_ = nullptr;
-    std::vector<Node *> nodes_{};
+    std::vector<std::unique_ptr<Node>> nodes_;
     Node *min_key_node_ = nullptr;
 
    public:
-    using iterator = my_tree::iterator<KeyT>;
+    using iterator = tree_iterator<KeyT>;
     using const_iterator = iterator;
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = reverse_iterator;
@@ -34,7 +35,7 @@ class SearchTree final {
     SearchTree(const SearchTree &tree) {
         nodes_.reserve(tree.size());
 
-        for (auto i : tree.nodes_) {
+        for (const auto &i : tree.nodes_) {
             insert(i->key_);
         }
     }
@@ -56,11 +57,7 @@ class SearchTree final {
         return *this;
     }
 
-    ~SearchTree() {
-        for (auto iter : nodes_) {
-            delete (iter);
-        }
-    }
+    ~SearchTree() = default;
 
     size_t size() const noexcept { return nodes_.size(); }
     bool empty() const noexcept { return !top_; }
@@ -79,9 +76,10 @@ class SearchTree final {
 
     void insert(const KeyT &key) {
         if (!top_) {
-            top_ = new Node(key, top_);
-            nodes_.push_back(top_);
-            min_key_node_ = top_;
+            auto new_node = std::make_unique<Node>(key, top_);
+            min_key_node_ = new_node.get();
+            top_ = new_node.get();
+            nodes_.push_back(std::move(new_node));
 
             return;
         }
@@ -100,14 +98,15 @@ class SearchTree final {
             }
         }
 
-        current = new Node(key, parent);
+        auto new_node = std::make_unique<Node>(key, parent);
+        current = new_node.get();
         if (key < parent->key_) {
             parent->left_ = current;
         } else {
             parent->right_ = current;
         }
 
-        nodes_.push_back(current);
+        nodes_.push_back(std::move(new_node));
         if (key < min_key_node_->key_) {
             min_key_node_ = current;
         }
@@ -177,7 +176,7 @@ class SearchTree final {
 
    private:
     Node *balance(Node *p) {
-        Node::fix_height(p);
+        p->fix_height();
 
         const auto b_factor_value = Node::b_factor(p);
         if (b_factor_value == 2) {
@@ -214,8 +213,8 @@ class SearchTree final {
 
         q->parent_ = p;
 
-        Node::fix_height(q);
-        Node::fix_height(p);
+        q->fix_height();
+        p->fix_height();
 
         return p;
     }
@@ -237,8 +236,8 @@ class SearchTree final {
         }
         p->parent_ = q;
 
-        Node::fix_height(p);
-        Node::fix_height(q);
+        p->fix_height();
+        q->fix_height();
 
         return q;
     }
@@ -305,4 +304,4 @@ class SearchTree final {
     }
 };
 
-}  // namespace my_tree
+}  // namespace avl_tree

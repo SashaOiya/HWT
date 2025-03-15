@@ -3,7 +3,7 @@
 
 int main() try {
 #if defined(AVL_TREE)
-    using tree_type = my_tree::SearchTree<KeyT>;
+    using tree_type = avl_tree::SearchTree<KeyT>;
 #else
     using tree_type = std::set<KeyT>;
 #endif

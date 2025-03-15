@@ -14,7 +14,7 @@ static void BM_MyTree(benchmark::State& state) {
 
     std::vector<KeyT> answer = {};
     for (auto _ : state) {
-        get_answer<my_tree::SearchTree<KeyT>>(answer);
+        get_answer<avl_tree::SearchTree<KeyT>>(answer);
     }
 }
 
