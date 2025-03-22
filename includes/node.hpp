@@ -1,3 +1,5 @@
+#pragma once
+
 namespace avl_tree {
 
 template <typename KeyT>

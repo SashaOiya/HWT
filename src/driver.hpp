@@ -1,7 +1,9 @@
-#pragma once 
+#pragma once
 
 #include <iostream>
-#include <set>
+#include <iterator>
+#include <stdexcept>
+#include <type_traits>
 #include <vector>
 
 #include "hwt.hpp"
@@ -22,14 +24,12 @@ std::size_t range_query(const Tree_t& tree, const KeyT fst, const KeyT snd) {
 }
 
 template <typename Tree_t>
-void get_answer(std::vector<KeyT> &answer) {
+std::vector<KeyT> get_answer(const std::string dot_path) {
     Tree_t tree = {};
+    std::vector<KeyT> answers;
 
     char type = 0;
     while (std::cin >> type) {
-        if (!std::cin.good()) {
-            throw std::runtime_error("Invalid type of variable");
-        }
         if (type == 'k') {
             KeyT key;
             std::cin >> key;
@@ -50,15 +50,17 @@ void get_answer(std::vector<KeyT> &answer) {
                 throw std::runtime_error("Invalid key2");
             }
 
-            answer.push_back(range_query<Tree_t>(tree, key1, key2));
+            answers.push_back(range_query<Tree_t>(tree, key1, key2));
         } else {
-            throw std::invalid_argument("Invalid type");
+            throw std::runtime_error("Invalid type");
         }
     }
 
-#if defined(AVL_TREE) && (DUMP)
-    tree.graph_dump("../../tree.dot");
+#if defined(AVL_TREE)
+    if (!dot_path.empty()) tree.graph_dump(dot_path);
 #endif
+
+    return answers;
 }
 
-}
+}  // namespace

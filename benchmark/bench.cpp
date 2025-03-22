@@ -6,28 +6,40 @@
 #include "hwt.hpp"
 
 static void BM_MyTree(benchmark::State& state) {
-    std::ifstream file("../benchmark/data/test2.txt");
-    if (!file) {
-        throw std::runtime_error("Reading file error");
-    }
-    std::cin.rdbuf(file.rdbuf());
+    try {
+        std::ifstream file("../benchmark/data/test7.txt");
+        if (!file) {
+            throw std::runtime_error("Reading file error");
+        }
+        std::cin.rdbuf(file.rdbuf());
 
-    std::vector<KeyT> answer = {};
-    for (auto _ : state) {
-        get_answer<avl_tree::SearchTree<KeyT>>(answer);
+        std::string dot_path;
+        for (auto _ : state) {
+            get_answer<avl_tree::SearchTree<KeyT>>(dot_path);
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error : " << e.what() << '\n';
+    } catch (...) {
+        std::cerr << "Caught unknown exception\n";
     }
 }
 
 static void BM_StdSet(benchmark::State& state) {
-    std::ifstream file("../benchmark/data/test2.txt");
-    if (!file) {
-        throw std::runtime_error("Reading file error");
-    }
-    std::cin.rdbuf(file.rdbuf());
+    try {
+        std::ifstream file("../benchmark/data/test7.txt");
+        if (!file) {
+            throw std::runtime_error("Reading file error");
+        }
+        std::cin.rdbuf(file.rdbuf());
 
-    std::vector<KeyT> answer = {};
-    for (auto _ : state) {
-        get_answer<std::set<KeyT>>(answer);
+        std::string dot_path;
+        for (auto _ : state) {
+            get_answer<std::set<KeyT>>(dot_path);
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error : " << e.what() << '\n';
+    } catch (...) {
+        std::cerr << "Caught unknown exception\n";
     }
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <fstream>
 #include <iterator>
 #include <memory>
@@ -20,9 +21,10 @@ class SearchTree final {
 
    public:
     using iterator = tree_iterator<KeyT>;
-    using const_iterator = iterator;
+    using const_iterator = const iterator;
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = reverse_iterator;
+    using difference_type = std::ptrdiff_t;
 
     SearchTree(std::initializer_list<KeyT> l) {
         nodes_.reserve(l.size());
@@ -35,8 +37,8 @@ class SearchTree final {
     SearchTree(const SearchTree &tree) {
         nodes_.reserve(tree.size());
 
-        for (const auto &i : tree.nodes_) {
-            insert(i->key_);
+        for (auto it = tree.nodes_.begin(), ite = tree.nodes_.end(); it != ite; ++it) {
+            insert(it->get()->key_);
         }
     }
 
@@ -52,7 +54,7 @@ class SearchTree final {
           min_key_node_(std::exchange(rhs.min_key_node_, nullptr)),
           nodes_(std::move(rhs.nodes_)) {}
 
-    SearchTree operator=(SearchTree &&rhs) noexcept {
+    SearchTree &operator=(SearchTree &&rhs) noexcept {
         swap(rhs);
         return *this;
     }
@@ -77,29 +79,20 @@ class SearchTree final {
     void insert(const KeyT &key) {
         if (!top_) {
             auto new_node = std::make_unique<Node>(key, top_);
-            min_key_node_ = new_node.get();
             top_ = new_node.get();
+            min_key_node_ = top_;
             nodes_.push_back(std::move(new_node));
 
             return;
         }
 
-        Node *current = top_;
-        Node *parent = nullptr;
-
-        while (current) {
-            parent = current;
-            if (key < current->key_) {
-                current = current->left_;
-            } else if (current->key_ < key) {
-                current = current->right_;
-            } else {
-                return;
-            }
+        auto parent = find_key_parent(key);
+        if (!parent) {
+            return;
         }
 
         auto new_node = std::make_unique<Node>(key, parent);
-        current = new_node.get();
+        auto current = new_node.get();
         if (key < parent->key_) {
             parent->left_ = current;
         } else {
@@ -111,20 +104,16 @@ class SearchTree final {
             min_key_node_ = current;
         }
 
-        Node *node = current;
-
-        while (node) {
-            node = balance(node);
-            node = node->parent_;
+        while (current) {
+            current = balance(current);
+            current = current->parent_;
         }
-
-        return;
     }
 
     void swap(SearchTree &tree) noexcept {
         std::swap(top_, tree.top_);
-        std::swap(nodes_, tree.nodes_);
         std::swap(min_key_node_, tree.min_key_node_);
+        nodes_.swap(tree.nodes_);
     }
 
     auto lower_bound(const KeyT &value) const {
@@ -132,10 +121,10 @@ class SearchTree final {
         Node *result = nullptr;
 
         while (node) {
-            if (value <= node->key_) {
-                result = std::exchange(node, node->left_);
-            } else {
+            if (node->key_ < value) {
                 node = node->right_;
+            } else {
+                result = std::exchange(node, node->left_);
             }
         }
 
@@ -156,25 +145,69 @@ class SearchTree final {
         return iterator{result};
     }
 
-    int getRank(Node *node, const KeyT &val) const {
+    difference_type my_distance(const KeyT &x, const KeyT &y) const {
+        return get_rank(y) - get_rank_min(x);
+    }
+
+   private:
+    Node* find_key_parent(const KeyT &key) const {
+        Node *current = top_;
+        Node *parent = nullptr;
+
+        while (current) {
+            parent = current;
+            if (key < current->key_) {
+                current = current->left_;
+            } else if (current->key_ < key) {
+                current = current->right_;
+            } else {
+                return nullptr;
+            }
+        }
+
+        return parent;
+    }
+
+    difference_type get_rank_min(const KeyT &val) const {
         int rank = 0;
+        auto *node = top_;
         while (node) {
             if (val < node->key_) {
                 node = node->left_;
             } else {
-                rank += Node::get_size(node->left_) + 1;
-                if (val == node->key_) break;
+                const auto left_subtree_size = Node::get_size(node->left_);
+                if (node->key_ < val) {
+                    rank += left_subtree_size + 1;
+                } else {
+                    rank += left_subtree_size;
+                    break;
+                }
                 node = node->right_;
             }
         }
         return rank;
     }
 
-    int my_distance(const KeyT &x, const KeyT &y) const {
-        return getRank(top_, y) - getRank(top_, x - 1);
+    difference_type get_rank(const KeyT &val) const {
+        int rank = 0;
+        auto *node = top_;
+        while (node) {
+            if (val < node->key_) {
+                node = node->left_;
+            } else {
+                const auto left_subtree_size = Node::get_size(node->left_);
+                if (node->key_ < val) {
+                    rank += left_subtree_size + 1;
+                } else {
+                    rank += left_subtree_size + 1;
+                    break;
+                }
+                node = node->right_;
+            }
+        }
+        return rank;
     }
 
-   private:
     Node *balance(Node *p) {
         p->fix_height();
 
@@ -245,7 +278,7 @@ class SearchTree final {
     void graph_dump_nodes(std::ofstream &file, Node *root) const {
         if (!root) return;
 
-        std::stack<Node *> stack = {};
+        std::stack<Node *> stack = {};  // remove this piece of shit
         stack.push(root);
 
         bool is_root = true;
@@ -258,8 +291,7 @@ class SearchTree final {
                  << node->key_ << "\"]" << std::endl;
 
             if (!is_root)
-                file << "\"" << node->parent_ << "\"" << " -> " << "\"" << node << "\""
-                     << std::endl;
+                file << '\"' << node->parent_ << "\" -> \"" << node << '\"' << std::endl;
             else
                 is_root = false;
 

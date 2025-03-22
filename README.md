@@ -1,11 +1,10 @@
 # HWT
-Для работы с моей программой вам понадобятся 
-```sh
-CMake of version 3.20 (or higher)
-python3
-python3-venv
-pip
-```
+Для работы с моей программой вам понадобятся
+- CMake of version 3.20 (or higher)
+- python3
+- python3-venv
+- pip
+
 # Установка
 Склонируйте репозиторий, перейдите в папку с ним.
 Сборка проекта:

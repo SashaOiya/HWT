@@ -1,16 +1,22 @@
-//#include <CLI/CLI.hpp>
 #include "driver.hpp"
 
-int main() try {
+#include <CLI/CLI.hpp>
+
+int main(int argc, char** argv) try {
+    CLI::App app{"HWT"};
+
+    std::string dot_path;
+    app.add_option("--dot", dot_path, "Path to the .dot file with the tree");
+
+    CLI11_PARSE(app, argc, argv);
+
 #if defined(AVL_TREE)
     using tree_type = avl_tree::SearchTree<KeyT>;
 #else
     using tree_type = std::set<KeyT>;
 #endif
-    std::vector<KeyT> answer = {};
-    get_answer<tree_type>(answer);
 
-    for (auto& it : answer) std::cout << it << ' ';
+    for (auto ans : get_answer<tree_type>(dot_path)) std::cout << ans << ' ';
 
     return 0;
 } catch (const std::exception& e) {

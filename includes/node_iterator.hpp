@@ -43,6 +43,21 @@ class tree_iterator final {
    private:
     const TreeNode<KeyT>* current;
 
+    void advance_part( ) noexcept {
+        if (current->right_) {
+            current = current->right_;
+            while (current->left_) {
+                current = current->left_;
+            }
+        } else {
+            auto parent = current->parent_;
+            while (parent && current == parent->right_) {
+                current = std::exchange(parent, parent->parent_);
+            }
+            current = parent;
+        }
+    }
+
     void advanceForward() noexcept {
         if (current->right_) {
             current = current->right_;

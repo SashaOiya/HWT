@@ -67,3 +67,18 @@ TEST(AVL_tree, move_assignment) {
         EXPECT_EQ(*itt, *itt_lhs);
     }
 }
+
+TEST(AVL_tree, range_based) {
+    avl_tree::SearchTree<int> tree = {5, 8, 9, 12, 3, -4, 67, 18};
+
+    std::vector<int> data = {};
+    for (auto itt : tree) {
+        data.push_back(itt);
+    }
+
+    EXPECT_TRUE(data.size() == tree.size());
+    auto itt_tree = tree.begin();
+    for (auto itt_data = data.begin(), end = data.end(); itt_data != end; ++itt_data, ++itt_tree) {
+        EXPECT_EQ(*itt_data, *itt_tree);
+    }
+}
