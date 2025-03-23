@@ -2,12 +2,14 @@
 
 #include <cstddef>
 #include <fstream>
+#include <iostream>
 #include <iterator>
 #include <memory>
 #include <stack>
 #include <utility>
 #include <vector>
 
+#include "node.hpp"
 #include "node_iterator.hpp"
 
 namespace avl_tree {
@@ -16,17 +18,20 @@ template <typename KeyT>
 class SearchTree final {
     using Node = TreeNode<KeyT>;
     Node *top_ = nullptr;
-    std::vector<std::unique_ptr<Node>> nodes_;
     Node *min_key_node_ = nullptr;
+    std::vector<std::unique_ptr<Node>> nodes_;
 
    public:
-    using iterator = tree_iterator<KeyT>;
+    using value_type = KeyT;
+    using iterator = tree_iterator<value_type>;
     using const_iterator = const iterator;
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = reverse_iterator;
     using difference_type = std::ptrdiff_t;
+    using reference = value_type &;
+    using const_reference = const value_type &;
 
-    SearchTree(std::initializer_list<KeyT> l) {
+    SearchTree(std::initializer_list<value_type> l) {
         nodes_.reserve(l.size());
 
         for (auto &itt : l) {
@@ -76,7 +81,7 @@ class SearchTree final {
     const_reverse_iterator crbegin() const noexcept { return rbegin(); }
     const_reverse_iterator crend() const noexcept { return rend(); }
 
-    void insert(const KeyT &key) {
+    void insert(const value_type &key) {
         if (!top_) {
             auto new_node = std::make_unique<Node>(key, top_);
             top_ = new_node.get();
@@ -93,13 +98,14 @@ class SearchTree final {
 
         auto new_node = std::make_unique<Node>(key, parent);
         auto current = new_node.get();
+        nodes_.push_back(std::move(new_node));
+
         if (key < parent->key_) {
             parent->left_ = current;
         } else {
             parent->right_ = current;
         }
 
-        nodes_.push_back(std::move(new_node));
         if (key < min_key_node_->key_) {
             min_key_node_ = current;
         }
@@ -110,13 +116,11 @@ class SearchTree final {
         }
     }
 
-    void swap(SearchTree &tree) noexcept {
-        std::swap(top_, tree.top_);
-        std::swap(min_key_node_, tree.min_key_node_);
-        nodes_.swap(tree.nodes_);
+    difference_type my_distance(const value_type &x, const value_type &y) const {
+        return upper_rank(y) - lower_rank(x);
     }
 
-    auto lower_bound(const KeyT &value) const {
+    auto lower_bound(const value_type &value) const {
         Node *node = top_;
         Node *result = nullptr;
 
@@ -131,7 +135,7 @@ class SearchTree final {
         return iterator{result};
     }
 
-    auto upper_bound(const KeyT &value) const {
+    auto upper_bound(const value_type &value) const {
         Node *node = top_;
         Node *result = nullptr;
         while (node) {
@@ -145,21 +149,22 @@ class SearchTree final {
         return iterator{result};
     }
 
-    difference_type my_distance(const KeyT &x, const KeyT &y) const {
-        return get_rank(y) - get_rank_min(x);
+   private:
+    void swap(SearchTree &tree) noexcept {
+        std::swap(top_, tree.top_);
+        std::swap(min_key_node_, tree.min_key_node_);
+        nodes_.swap(tree.nodes_);
     }
 
-   private:
-    Node* find_key_parent(const KeyT &key) const {
+    Node *find_key_parent(const value_type &key) const {
         Node *current = top_;
         Node *parent = nullptr;
 
         while (current) {
-            parent = current;
             if (key < current->key_) {
-                current = current->left_;
+                parent = std::exchange(current, current->left_);
             } else if (current->key_ < key) {
-                current = current->right_;
+                parent = std::exchange(current, current->right_);
             } else {
                 return nullptr;
             }
@@ -168,47 +173,8 @@ class SearchTree final {
         return parent;
     }
 
-    difference_type get_rank_min(const KeyT &val) const {
-        int rank = 0;
-        auto *node = top_;
-        while (node) {
-            if (val < node->key_) {
-                node = node->left_;
-            } else {
-                const auto left_subtree_size = Node::get_size(node->left_);
-                if (node->key_ < val) {
-                    rank += left_subtree_size + 1;
-                } else {
-                    rank += left_subtree_size;
-                    break;
-                }
-                node = node->right_;
-            }
-        }
-        return rank;
-    }
-
-    difference_type get_rank(const KeyT &val) const {
-        int rank = 0;
-        auto *node = top_;
-        while (node) {
-            if (val < node->key_) {
-                node = node->left_;
-            } else {
-                const auto left_subtree_size = Node::get_size(node->left_);
-                if (node->key_ < val) {
-                    rank += left_subtree_size + 1;
-                } else {
-                    rank += left_subtree_size + 1;
-                    break;
-                }
-                node = node->right_;
-            }
-        }
-        return rank;
-    }
-
     Node *balance(Node *p) {
+        assert(p);
         p->fix_height();
 
         const auto b_factor_value = Node::b_factor(p);
@@ -229,6 +195,7 @@ class SearchTree final {
     }
 
     Node *rotate_left(Node *q) {
+        assert(q);
         auto p = q->right_;
         q->right_ = p->left_;
         if (p->left_) p->left_->parent_ = q;
@@ -253,6 +220,7 @@ class SearchTree final {
     }
 
     Node *rotate_right(Node *p) {
+        assert(p);
         auto q = p->left_;
         p->left_ = q->right_;
         if (q->right_) q->right_->parent_ = p;
@@ -275,11 +243,51 @@ class SearchTree final {
         return q;
     }
 
-    void graph_dump_nodes(std::ofstream &file, Node *root) const {
-        if (!root) return;
+    difference_type lower_rank(const value_type &val) const {
+        difference_type rank = 0;
+        auto *node = top_;
+        while (node) {
+            if (val < node->key_) {
+                node = node->left_;
+            } else {
+                const auto left_subtree_size = Node::get_size(node->left_);
+                if (node->key_ < val) {
+                    rank += left_subtree_size + 1;
+                } else {
+                    rank += left_subtree_size;
+                    break;
+                }
+                node = node->right_;
+            }
+        }
+        return rank;
+    }
 
-        std::stack<Node *> stack = {};  // remove this piece of shit
-        stack.push(root);
+    difference_type upper_rank(const value_type &val) const {
+        difference_type rank = 0;
+        auto *node = top_;
+        while (node) {
+            if (val < node->key_) {
+                node = node->left_;
+            } else {
+                const auto left_subtree_size = Node::get_size(node->left_);
+                if (node->key_ < val) {
+                    rank += left_subtree_size + 1;
+                } else {
+                    rank += left_subtree_size + 1;
+                    break;
+                }
+                node = node->right_;
+            }
+        }
+        return rank;
+    }
+
+    void graph_dump_nodes(std::ofstream &file) const {
+        if (!top_) return;
+
+        std::stack<Node *> stack = {}; 
+        stack.push(top_);
 
         bool is_root = true;
         while (!stack.empty()) {
@@ -306,33 +314,20 @@ class SearchTree final {
         }
     }
 
+
    public:
-    void graph_dump(std::string filename) const {
-        std::ofstream file(filename);
+    void graph_dump(std::string &dot_file, std::string &output_file) const {
+        std::ofstream file(dot_file);
         file << "digraph G {" << std::endl << "node [shape = record];" << std::endl;
 
-        if (top_) graph_dump_nodes(file, top_);
+        if (top_) graph_dump_nodes(file);
 
         file << "}";
         file.close();
 
-        std::string command = "dot -T png " + filename + " -o ../../logs/tree5.png";
-        std::system(command.c_str());
-    }
-
-    void text_dump(const Node *tree_node) {
-        if (tree_node == nullptr) {
-            printf(" nil ");
-
-            return;
-        }
-        printf(" ( ");
-        printf("%d", tree_node->key_);
-
-        Tree_Text_Dump(tree_node->left_);
-        Tree_Text_Dump(tree_node->right_);
-
-        printf(" ) ");
+        const std::string command = "dot -T png " + dot_file + " -o " + output_file;
+        auto err = std::system(command.c_str());
+        if (err) std::cerr << "Ошибка записи .dot файла: " << command << std::endl;
     }
 };
 

@@ -24,7 +24,7 @@ std::size_t range_query(const Tree_t& tree, const KeyT fst, const KeyT snd) {
 }
 
 template <typename Tree_t>
-std::vector<KeyT> get_answer(const std::string dot_path) {
+std::vector<KeyT> get_answer(std::string &dot_path, std::string &output_file) {
     Tree_t tree = {};
     std::vector<KeyT> answers;
 
@@ -57,7 +57,7 @@ std::vector<KeyT> get_answer(const std::string dot_path) {
     }
 
 #if defined(AVL_TREE)
-    if (!dot_path.empty()) tree.graph_dump(dot_path);
+    if (!dot_path.empty()) tree.graph_dump(dot_path, output_file);
 #endif
 
     return answers;

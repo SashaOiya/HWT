@@ -1,5 +1,8 @@
 #pragma once
 
+#include <utility>
+#include <iterator>
+#include <cstddef>
 #include "node.hpp"
 
 namespace avl_tree {
@@ -9,9 +12,9 @@ class tree_iterator final {
    public:
     using iterator_category = std::bidirectional_iterator_tag;
     using value_type = KeyT;
+    using pointer    = const KeyT*;
+    using reference  = const KeyT&;
     using difference_type = std::ptrdiff_t;
-    using pointer = const KeyT*;
-    using reference = const KeyT&;
 
     explicit tree_iterator(const TreeNode<KeyT>* node = nullptr) noexcept : current(node) {}
 
