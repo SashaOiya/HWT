@@ -11,7 +11,7 @@ enable_testing()
 
 foreach(TREE_PROJECT set hwt)
     add_executable(${TREE_PROJECT} src/driver.cpp)
-    target_compile_features(${TREE_PROJECT} PUBLIC cxx_std_23)
+    target_compile_features(${TREE_PROJECT} PUBLIC cxx_std_20)
     target_include_directories(${TREE_PROJECT} PRIVATE ./includes)
     target_link_libraries(${TREE_PROJECT} PRIVATE CLI11::CLI11)
 endforeach()

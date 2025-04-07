@@ -17,7 +17,7 @@ pip3 install -r requirements.txt
 ```
 ## Соберите проект
 ```sh
-conan install . --output-folder=third_party --build=missing -s compiler.cppstd=23
+conan install . --output-folder=third_party --build=missing -s compiler.cppstd=20
 cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=./third_party/conan_toolchain.cmake
 cd build/
 make
