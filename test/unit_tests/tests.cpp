@@ -17,7 +17,7 @@ TEST(AVL_tree, copy_ctor) {
 
 TEST(AVL_tree, copy_assignment) {
     avl_tree::SearchTree<int> tree = {3, 6, 9, 1, 5, 10, 22};
-
+    const auto size = tree.size();
     std::vector<int> data = {};
     for (auto itt : tree) {
         data.push_back(itt);
@@ -26,10 +26,11 @@ TEST(AVL_tree, copy_assignment) {
     avl_tree::SearchTree<int> lhs = {};
     lhs = tree;
 
-    EXPECT_TRUE(data.size() == lhs.size());
-    auto itt_lhs = lhs.begin();
-    for (auto itt = data.begin(), end = data.end(); itt != end; ++itt, ++itt_lhs) {
-        EXPECT_EQ(*itt, *itt_lhs);
+    EXPECT_TRUE(data.size() == size);
+    EXPECT_TRUE(data.size() == data.size());
+    auto itt_data = data.begin();
+    for (auto itt = lhs.begin(), end = lhs.end(); itt != end; ++itt, ++itt_data) {
+        EXPECT_EQ(*itt, *itt_data);
     }
 }
 

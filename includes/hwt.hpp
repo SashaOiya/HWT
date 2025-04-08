@@ -114,6 +114,8 @@ class SearchTree final {
             current = balance(current);
             current = current->parent_;
         }
+
+        update_links();
     }
 
     difference_type my_distance(const value_type &x, const value_type &y) const {
@@ -283,10 +285,36 @@ class SearchTree final {
         return rank;
     }
 
+    void update_links() {
+        if (!top_) return;
+
+        std::stack<Node *> stack;
+        Node *current = top_;
+        Node *prev = nullptr;
+
+        while (current || !stack.empty()) {
+            while (current) {
+                stack.push(current);
+                current = current->left_;
+            }
+
+            current = stack.top();
+            stack.pop();
+
+            current->prev_ = prev;
+            if (prev) {
+                prev->next_ = current;
+            }
+
+            prev = current;
+            current = current->right_;
+        }
+    }
+
     void graph_dump_nodes(std::ofstream &file) const {
         if (!top_) return;
 
-        std::stack<Node *> stack = {}; 
+        std::stack<Node *> stack = {};
         stack.push(top_);
 
         bool is_root = true;
@@ -313,7 +341,6 @@ class SearchTree final {
             }
         }
     }
-
 
    public:
     void graph_dump(std::string &dot_file, std::string &output_file) const {

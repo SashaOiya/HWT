@@ -1,8 +1,9 @@
 #pragma once
 
-#include <utility>
-#include <iterator>
 #include <cstddef>
+#include <iterator>
+#include <utility>
+
 #include "node.hpp"
 
 namespace avl_tree {
@@ -12,8 +13,8 @@ class tree_iterator final {
    public:
     using iterator_category = std::bidirectional_iterator_tag;
     using value_type = KeyT;
-    using pointer    = const KeyT*;
-    using reference  = const KeyT&;
+    using pointer = const KeyT*;
+    using reference = const KeyT&;
     using difference_type = std::ptrdiff_t;
 
     explicit tree_iterator(const TreeNode<KeyT>* node = nullptr) noexcept : current(node) {}
@@ -22,31 +23,31 @@ class tree_iterator final {
     auto& operator*() const { return current->key_; }
 
     tree_iterator& operator++() {
-        advanceForward();
+        current = current ? current->next_ : nullptr;
         return *this;
     }
 
     tree_iterator operator++(int) {
-        auto temp = *this;
-        advanceForward();
-        return temp;
+        tree_iterator tmp = *this;
+        ++(*this);
+        return tmp;
     }
 
     tree_iterator& operator--() {
-        advanceBackward();
+        current = current ? current->prev_ : nullptr;
         return *this;
     }
 
     tree_iterator operator--(int) {
-        auto temp = *this;
-        advanceBackward();
-        return temp;
+        tree_iterator tmp = *this;
+        --(*this);
+        return tmp;
     }
 
    private:
     const TreeNode<KeyT>* current;
 
-    void advance_part( ) noexcept {
+    void advance_part() noexcept {
         if (current->right_) {
             current = current->right_;
             while (current->left_) {

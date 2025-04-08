@@ -1,9 +1,9 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <cstdio>
 #include <type_traits>
-#include <cassert>
 
 namespace avl_tree {
 
@@ -14,6 +14,8 @@ class TreeNode final {
    public:
     KeyT key_;
     TreeNode *parent_, *left_ = nullptr, *right_ = nullptr;
+    TreeNode* next_ = nullptr;
+    TreeNode* prev_ = nullptr;
 
     TreeNode(const KeyT& val, TreeNode* parent = nullptr) : key_(val), parent_(parent) {}
 
